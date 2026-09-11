@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Планета — отметки</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="theme-color" content="#0f2a4f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Отметки">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  /* ЖУРНАЛ ЗАНИМАЕТ ВЕСЬ ЭКРАН. Здесь оформлен только экран запуска. */
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#0f2a4f;overflow:hidden}
+  body{font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;color:#dbe7f7}
+  #frame{position:fixed;inset:0;width:100%;height:100%;border:0;background:#eef3f9;opacity:0;transition:opacity .35s ease}
+  #frame.ready{opacity:1}
+
+  /* экран запуска */
+  #splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:22px;padding:32px 24px calc(32px + env(safe-area-inset-bottom,0px));
+    background:radial-gradient(120% 90% at 50% 12%,#1e4e8a 0%,#173f67 45%,#0f2a4f 100%);
+    transition:opacity .35s ease}
+  #splash.gone{opacity:0;pointer-events:none}
+  #splash img{width:104px;height:104px;border-radius:26px;box-shadow:0 18px 46px rgba(3,12,30,.55)}
+  .name{font-size:27px;font-weight:800;letter-spacing:.26em;margin:0;color:#fff;padding-left:.26em}
+  .sub{margin:-14px 0 0;font-size:12.5px;letter-spacing:.2em;color:#8fb0d8;padding-left:.2em}
+  .line{width:148px;height:3px;border-radius:2px;background:rgba(255,255,255,.16);overflow:hidden}
+  .line i{display:block;width:38%;height:100%;border-radius:2px;background:#5aa7ff;animation:slide 1.15s ease-in-out infinite}
+  @keyframes slide{0%{transform:translateX(-105%)}100%{transform:translateX(285%)}}
+  @media (prefers-reduced-motion:reduce){.line i{animation:none;width:100%;opacity:.5}}
+
+  /* сообщение, если журнал не открылся */
+  #fail{display:none;max-width:340px;text-align:center}
+  #fail.on{display:block}
+  #fail p{margin:0 0 16px;font-size:14.5px;line-height:1.5;color:#c6d8ef}
+  #fail a{display:block;background:#2f7fe0;color:#fff;text-decoration:none;font-weight:700;font-size:15px;
+    padding:14px 18px;border-radius:13px;min-height:48px}
+  #fail a+a{margin-top:9px;background:transparent;border:1px solid rgba(255,255,255,.3);color:#dbe7f7;font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     ЕДИНСТВЕННОЕ, ЧТО НУЖНО ИЗМЕНИТЬ, — АДРЕС ЖУРНАЛА В СТРОКЕ НИЖЕ.
+     Возьмите его: script.google.com → проект → Развернуть →
+     Управление развёртываниями → строка «Веб-приложение» → Копировать,
+     и допишите в конце ?page=teacher — это вход только для отметок.
+     Должно получиться: https://script.google.com/macros/s/…/exec?page=teacher
+     ================================================================ -->
+<script>
+  const JOURNAL_URL = 'https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycby0O1aycallOk5fTZUa5L_CG432hMARssdKtmOHsJzMaqOHvFUkYrYUCQKeqyTxCW8rcQ/exec/exec?page=teacher';
+</script>
+
+<iframe id="frame" title="Отметки «Планета»" allow="clipboard-write; fullscreen"></iframe>
+
+<div id="splash">
+  <img src="icons/icon-192.png" alt="">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:20px">
+    <h1 class="name">ПЛАНЕТА</h1>
+    <p class="sub">отметки посещения</p>
+  </div>
+  <div class="line" id="line"><i></i></div>
+  <div id="fail">
+    <p id="failText">Отметки не открылись. Проверьте интернет и попробуйте ещё раз.</p>
+    <a href="#" id="again">Повторить</a>
+    <a href="#" id="inBrowser" target="_blank" rel="noopener">Открыть в браузере</a>
+  </div>
+</div>
+
+<script>
+(function(){
+  const frame=document.getElementById('frame'), splash=document.getElementById('splash'),
+        line=document.getElementById('line'), fail=document.getElementById('fail'),
+        failText=document.getElementById('failText');
+  const bad=!JOURNAL_URL || JOURNAL_URL.indexOf('ВСТАВЬТЕ') !== -1 || !/\/exec\b/.test(JOURNAL_URL);
+  let done=false, timer=null;
+
+  function show(msg){line.style.display='none';fail.classList.add('on');if(msg)failText.textContent=msg}
+  function ready(){if(done)return;done=true;clearTimeout(timer);frame.classList.add('ready');splash.classList.add('gone');
+    setTimeout(()=>{splash.style.display='none'},400)}
+
+  document.getElementById('inBrowser').href=JOURNAL_URL;
+  document.getElementById('again').addEventListener('click',e=>{e.preventDefault();location.reload()});
+
+  if(bad){
+    show('В файле index.html не указан адрес журнала. Откройте файл и впишите адрес, который заканчивается на /exec.');
+  }else if(navigator.onLine===false){
+    show('Нет связи с интернетом. Включите Wi-Fi или мобильный интернет и нажмите «Повторить».');
+    window.addEventListener('online',()=>location.reload(),{once:true});
+  }else{
+    frame.addEventListener('load',ready);
+    frame.src=JOURNAL_URL;
+    // журнал грузится дольше обычного сайта; ждём, потом предлагаем открыть в браузере
+    timer=setTimeout(()=>{if(!done)show('Страница открывается дольше обычного. Подождите ещё немного или откройте его в браузере.')},22000);
+  }
+
+  if('serviceWorker' in navigator)
+    window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+})();
+</script>
+</body>
+</html>
