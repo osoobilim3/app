@@ -8,8 +8,9 @@
 <meta name="theme-color" content="#173f67">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
 <style>
-/* Страница договора для родителей (v3, сборка 561: паспорт по фото — снимок сжимается на телефоне, журнал распознаёт текст и возвращает только данные,
-   снимок нигде не сохраняется; v2 — данные паспорта из анкеты, подпись словом, вёрстка договора ctdoc.js). Оформление — как у прежней страницы в журнале.
+/* Страница договора для родителей (v4, сборка 562: скрины из «Түндүк» — несколько картинок за раз, орган СӨМ, адрес прописки, ФИО кириллицей с подсказкой;
+   v3 — паспорт по фото: снимок сжимается на телефоне, журнал распознаёт текст и возвращает только данные, снимок нигде не сохраняется;
+   v2 — данные паспорта из анкеты, подпись словом, вёрстка договора ctdoc.js). Оформление — как у прежней страницы в журнале.
    Данные берутся из журнала «Планета» запросом без cookies, поэтому Google-аккаунты на телефоне на страницу не влияют. */
 *{box-sizing:border-box}
 body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;background:#e9eef5;color:#1b2333;padding:14px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
@@ -50,6 +51,7 @@ input:focus{outline:none;border-color:#173f67}
 .warn{background:#fff7ed;border:1.5px solid #fdba74;border-radius:12px;padding:10px 12px;font-size:13px;color:#9a3412;margin-top:12px}
 input.rec{border-color:#34d399;background:#f0fdf4}.sw button.rec{border-color:#34d399}.sw button.on.rec{box-shadow:0 0 0 2px #a7f3d0}
 .vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;left:-9999px}
+.hint{background:#eef6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:7px 10px;font-size:12.5px;color:#1e3a8a;margin-top:6px}.hint b{color:#173f67}.hint a{color:#173f67;font-weight:700}
 .done label{color:#173f67;font-weight:700;text-decoration:underline;cursor:pointer}
 </style>
 <style id="ctdocCss"></style>
@@ -135,14 +137,14 @@ function parsePass(d) {
   var p = String(d.passport || '').trim().replace(/\s+/g, ' ');
   if (p) { var m = p.match(/^([A-Za-zА-Яа-я]{1,3})\s*([0-9A-Za-z]{3,})$/); if (m) { var sr = m[1].toUpperCase(); if (['ID', 'AN', 'AC'].indexOf(sr) >= 0) o.ser = sr; else { o.ser = 'other'; o.serOther = sr; } o.num = m[2].toUpperCase(); } else { o.ser = 'other'; o.serOther = ''; o.num = p.replace(/\s/g, ''); } }
   var iss = String(d.passIssued || '').trim();
-  if (iss) { var dm = iss.match(/(\d{2})\.(\d{2})\.(\d{4})/); if (dm) { o.date = dm[3] + '-' + dm[2] + '-' + dm[1]; iss = iss.replace(dm[0], '').replace(/[,\s]+$/, '').trim(); } var mk = iss.match(/^МКК\s*(.*)$/i); if (mk) { o.mkk = true; o.code = mk[1].trim(); } else { o.mkk = false; o.code = iss; } }
+  if (iss) { var dm = iss.match(/(\d{2})\.(\d{2})\.(\d{4})/); if (dm) { o.date = dm[3] + '-' + dm[2] + '-' + dm[1]; iss = iss.replace(dm[0], '').replace(/[,\s]+$/, '').trim(); } var mk = iss.match(/^(МКК|СӨМ|СОМ)\s*(.*)$/i); if (mk) { o.mkk = /МКК/i.test(mk[1]) ? true : 'СӨМ'; o.code = mk[2].trim(); } else { o.mkk = false; o.code = iss; } }
   var vm = String(d.passValid || '').match(/(\d{2})\.(\d{2})\.(\d{4})/); if (vm) o.valid = vm[3] + '-' + vm[2] + '-' + vm[1];
   return o;
 }
 function prefill(d) {
   var o = parsePass(d), had = false;
   if (o.ser) { had = true; var b = o.ser === 'other' ? document.querySelector('#p_ser button:last-child') : Array.prototype.filter.call(document.querySelectorAll('#p_ser button'), function(x) { return x.textContent.trim() === o.ser; })[0]; if (b) pick(b); if (o.ser === 'other') $('p_ser_other').value = o.serOther; $('p_num').value = o.num; }
-  if (o.code || o.date) { had = true; pick(o.mkk ? document.querySelector('#p_iss button:first-child') : document.querySelector('#p_iss button:last-child')); $('p_code').value = o.code; }
+  if (o.code || o.date) { had = true; pick(o.mkk === true ? camBtn('p_iss', 'МКК') : o.mkk === 'СӨМ' ? camBtn('p_iss', 'СӨМ') : document.querySelector('#p_iss button:last-child')); $('p_code').value = o.code; }
   if (o.date) { had = true; $('p_date').value = o.date; }
   if (o.valid) { had = true; $('p_valid').value = o.valid; }
   if (had) $('pre').style.display = 'block';
@@ -163,10 +165,10 @@ function render(d) {
   $('w').innerHTML = head
     + '<div class="box"><b>1. Ата-эненин маалыматтары</b><div class="mute">Келишим үчүн керек. Кыргызча же орусча жазсаңыз болот.</div>'
     + f('p_name', 'АТА-ЭНЕНИН АТЫ-ЖӨНҮ / ФИО РОДИТЕЛЯ', d.parent, 'Асанова Айгуль Бакытовна')
-    + '<div id="cam"></div>'
+    + '<div id="nameHint"></div><div id="cam"></div>'
     + '<label>ПАСПОРТ — СЕРИЯСЫ / СЕРИЯ</label><div class="sw" id="p_ser"><button type="button" onclick="pick(this)">ID</button><button type="button" onclick="pick(this)">AN</button><button type="button" onclick="pick(this)">AC</button><button type="button" onclick="pick(this)">Башка / Другая</button></div>'
     + '<div class="two"><div><label>НОМЕРИ / НОМЕР (только цифры)</label><input id="p_num" placeholder="1234567" inputmode="numeric" autocomplete="off" oninput="this.value=this.value.replace(/[^0-9A-Za-z]/g,\'\').toUpperCase()"></div><div id="p_ser_other_box" class="hidden"><label>СЕРИЯ</label><input id="p_ser_other" placeholder="AB" autocomplete="off" oninput="this.value=this.value.toUpperCase()"></div></div>'
-    + '<label>КИМ БЕРГЕН / КЕМ ВЫДАН</label><div class="two"><div style="flex:.6"><div class="sw" id="p_iss"><button type="button" onclick="pick(this)">МКК</button><button type="button" onclick="pick(this)">Башка / Другой</button></div></div><div><input id="p_code" placeholder="код, например 213011" inputmode="numeric" autocomplete="off" oninput="this.value=this.value.toUpperCase()"></div></div>'
+    + '<label>КИМ БЕРГЕН / КЕМ ВЫДАН</label><div class="sw" id="p_iss"><button type="button" onclick="pick(this)">МКК</button><button type="button" onclick="pick(this)">СӨМ</button><button type="button" onclick="pick(this)">Башка / Другой</button></div><input id="p_code" style="margin-top:6px" placeholder="код, например 213011" autocomplete="off" oninput="this.value=this.value.toUpperCase()">'
     + '<div class="two"><div><label>КАЧАН БЕРИЛГЕН / КОГДА ВЫДАН</label><input id="p_date" type="date"></div><div><label>ЖАРАКТУУ МӨӨНӨТҮ / ДЕЙСТВИТЕЛЕН ДО</label><input id="p_valid" type="date"></div></div>'
     + f('p_addr', 'ДАРЕГИ / АДРЕС', d.addr, 'Талас ш., Манас көч., 12') + '<div class="pre" id="pre" style="display:none">✓ Паспорттун маалыматтары анкетадан алынды — текшерип чыгыңыз. / Данные паспорта подставлены из анкеты — проверьте.</div></div>'
     + '<b>2. Келишимдин тексти</b><div class="doc ctdoc">' + docHtml(d.text, d.marks) + '</div>'
@@ -175,12 +177,12 @@ function render(d) {
     + '<div class="err" id="err"></div><button class="btn" id="b" onclick="go()">Окудум, макулмун ✓</button><div class="mute" style="margin-top:8px;text-align:center">Прочитал(а), согласен(на). Баскычты басканда келишим кабыл алынды деп эсептелет: дата, убакыт жана номер журналга жазылат.</div>';
   prefill(d); camReset();
 }
-function pick(b) { var box = b.parentNode; box.querySelectorAll('button').forEach(function(x) { x.classList.toggle('on', x === b); }); if (box.id === 'p_ser') $('p_ser_other_box').classList.toggle('hidden', !/Башка/.test(b.textContent)); if (box.id === 'p_iss') $('p_code').placeholder = /МКК/.test(b.textContent) ? 'код, например 213011' : 'название органа / органдын аталышы'; }
+function pick(b) { var box = b.parentNode; box.querySelectorAll('button').forEach(function(x) { x.classList.toggle('on', x === b); }); if (box.id === 'p_ser') $('p_ser_other_box').classList.toggle('hidden', !/Башка/.test(b.textContent)); if (box.id === 'p_iss') $('p_code').placeholder = /МКК|СӨМ/.test(b.textContent) ? 'код, например 213011' : 'название органа / органдын аталышы'; }
 function sel(id) { var b = document.querySelector('#' + id + ' button.on'); return b ? b.textContent.trim() : ''; }
 function d2(v) { return v ? String(v).split('-').reverse().join('.') : ''; }
 function go() {
   var ser = /Башка/.test(sel('p_ser')) ? $('p_ser_other').value.trim().toUpperCase() : sel('p_ser'), num = $('p_num').value.trim(), issSel = sel('p_iss'), code = $('p_code').value.trim().toUpperCase();
-  var pass = (ser + ' ' + num).trim(), iss = ((/МКК/.test(issSel) ? 'МКК ' : '') + code).trim() + (d2($('p_date').value) ? ', ' + d2($('p_date').value) : '');
+  var pass = (ser + ' ' + num).trim(), iss = ((/МКК/.test(issSel) ? 'МКК ' : /СӨМ/.test(issSel) ? 'СӨМ ' : '') + code).trim() + (d2($('p_date').value) ? ', ' + d2($('p_date').value) : '');
   var d = { name: $('p_name').value.trim(), pass: pass, iss: iss, val: d2($('p_valid').value), addr: $('p_addr').value.trim(), sign: $('p_sign').value.trim().replace(/\s+/g, ' ') }, e = $('err'); e.style.display = 'none';
   if (d.name.length < 5) { e.textContent = 'Ата-эненин аты-жөнүн жазыңыз / Напишите ФИО родителя.'; e.style.display = 'block'; return; }
   if (!ser || !num) { e.textContent = 'Паспорттун сериясын тандап, номерин жазыңыз / Выберите серию и напишите номер.'; e.style.display = 'block'; return; }
@@ -197,8 +199,8 @@ function go() {
 /* v3: паспорт по фото. Снимок сжимается здесь, на телефоне, и уходит в журнал одним запросом; журнал распознаёт текст и возвращает только данные
    полей — сам снимок никуда не сохраняется (так и написано родителю). При любой ошибке поля остаются для ручного ввода. */
 /* кнопка — это подпись к полю выбора файла (label): так камера/галерея открываются на iPhone надёжно, без имитации нажатия из скрипта */
-var CAM_INPUT = '<input type="file" id="camfile" accept="image/*" class="vh" onchange="camGot(this.files && this.files[0])">';
-var CAM_BTN = '<label class="cam" id="camBtn" for="camfile">📷 <span>Паспортту сүрөткө тартуу / Сфотографировать паспорт<small>ID-картанын арт жагын тартыңыз — маалыматтар өзү толот. Сүрөт сакталбайт. / Снимите обратную сторону — поля заполнятся сами. Фото не сохраняется.</small></span></label>' + CAM_INPUT;
+var CAM_INPUT = '<input type="file" id="camfile" accept="image/*" multiple class="vh" onchange="camGot(this.files)">';
+var CAM_BTN = '<label class="cam" id="camBtn" for="camfile">📷 <span>Паспорт: сүрөт же Түндүк скрини / Паспорт: фото или скрин из Тундук<small>ID-картанын арт жагын тартыңыз же «Түндүк» тиркемесинен эки тараптын скринин тандаңыз — маалыматтар өзү толот. Сүрөт сакталбайт. / Снимите обратную сторону карты или выберите скрины обеих сторон из приложения «Тундук» — поля заполнятся сами. Фото не сохраняется.</small></span></label>' + CAM_INPUT;
 var CAM_FAIL = 'Окуй алган жокпуз — сүрөттү кайра тартыңыз же колуңуз менен жазыңыз. / Не удалось прочитать — снимите ещё раз или впишите вручную.';
 function camReset() { var c = $('cam'); if (c) c.innerHTML = CAM_BTN; }
 function camPick() { var f = $('camfile'); if (f) { f.value = ''; f.click(); } }
@@ -210,15 +212,15 @@ function camShrink(file) {
     im.src = url;
   });
 }
-function camGot(file) {
-  if (!file) return;
-  $('cam').innerHTML = '<div class="busy" id="camBusy">⏳ Паспортту окуп жатабыз… / Распознаём паспорт…<div class="bar"><i></i></div></div>';
-  camShrink(file).then(function(img) { return apiPost({ op: 'ocr', id: ID, t: T, img: img }); }).then(function(r) {
+function camGot(files) {
+  var list = Array.prototype.slice.call(files || []).slice(0, 3); if (!list.length) return;   /* до трёх картинок: обе стороны карты или скрины Түндүк */
+  $('cam').innerHTML = '<div class="busy" id="camBusy">⏳ Паспортту окуп жатабыз… / Распознаём паспорт…' + (list.length > 1 ? ' (' + list.length + ')' : '') + '<div class="bar"><i></i></div></div>';
+  Promise.all(list.map(camShrink)).then(function(imgs) { return apiPost({ op: 'ocr', id: ID, t: T, imgs: imgs }); }).then(function(r) {
     if (!r || !r.ok) { camFail((r && r.error) || CAM_FAIL); return; }
     var k = camFill(r.found || {});
     if (!k) { camFail(CAM_FAIL); return; }
     var ru = k === 1 ? 'поле' : k < 5 ? 'поля' : 'полей';
-    $('cam').innerHTML = '<div class="done" id="camDone">✓ Сүрөттөн ' + k + ' маалымат окулду — текшерип чыгыңыз. / Из снимка прочитано ' + k + ' ' + ru + ' — проверьте.<div class="mute" style="margin-top:4px">Сүрөт сакталган жок. / Фото не сохранено. · <label for="camfile">📷 Кайра тартуу / Снять ещё раз</label></div></div>' + CAM_INPUT;
+    $('cam').innerHTML = '<div class="done" id="camDone">✓ Сүрөттөн ' + k + ' маалымат окулду — текшерип чыгыңыз. / Из снимка прочитано ' + k + ' ' + ru + ' — проверьте.<div class="mute" style="margin-top:4px">Сүрөт сакталган жок. / Фото не сохранено. · <label for="camfile">📷 Дагы кошуу / Добавить ещё</label></div></div>' + CAM_INPUT;
     var pre = $('pre'); if (pre) pre.style.display = 'none';
   }).catch(function() { camFail('Байланыш үзүлдү — кайра аракет кылыңыз же колуңуз менен жазыңыз. / Связь прервалась — попробуйте ещё раз или впишите вручную.'); });
 }
@@ -229,10 +231,13 @@ function camIso(v) { var m = String(v || '').match(/^(\d{2})\.(\d{2})\.(\d{4})$/
 function camFill(f) {
   var k = 0, mark = function(el) { if (el) el.classList.add('rec'); };
   if (f.ser && f.num) { var known = ['ID', 'AN', 'AC'].indexOf(f.ser) >= 0, b = known ? camBtn('p_ser', f.ser) : document.querySelector('#p_ser button:last-child'); if (b) { pick(b); mark(b); } if (!known) { $('p_ser_other').value = f.ser; mark($('p_ser_other')); } $('p_num').value = f.num; mark($('p_num')); k++; }
-  if (f.code) { var bi = f.how === 'МКК' ? document.querySelector('#p_iss button:first-child') : document.querySelector('#p_iss button:last-child'); if (bi) { pick(bi); mark(bi); } $('p_code').value = f.how === 'МКК' ? f.code : String(f.code).replace(/^МКК\s*/i, ''); mark($('p_code')); k++; }
+  if (f.code) { var bi = f.how === 'МКК' || f.how === 'СӨМ' ? camBtn('p_iss', f.how) : document.querySelector('#p_iss button:last-child'); if (bi) { pick(bi); mark(bi); } $('p_code').value = String(f.code).replace(/^(МКК|СӨМ)\s*/i, ''); mark($('p_code')); k++; }
   if (camIso(f.iss)) { $('p_date').value = camIso(f.iss); mark($('p_date')); k++; }
   if (camIso(f.val)) { $('p_valid').value = camIso(f.val); mark($('p_valid')); k++; }
-  if (f.nameLat && !$('p_name').value.trim()) $('p_name').placeholder = f.nameLat;   /* только подсказка: ФИО в договор — кириллицей, своей рукой */
+  if (f.addr) { $('p_addr').value = f.addr; mark($('p_addr')); k++; }   /* адрес прописки из Түндүк */
+  var nm = $('p_name'), cur = nm.value.trim();
+  if (f.name) { if (!cur) { nm.value = f.name; mark(nm); k++; } else if (cur.replace(/\s+/g, ' ').toLowerCase() !== f.name.toLowerCase()) { $('nameHint').innerHTML = '<div class="hint" id="nameHintBox">Документте: <b>' + esc(f.name) + '</b> — <a href="#" id="nameUse">Колдонуу / Использовать</a></div>'; $('nameUse').onclick = function() { nm.value = f.name; mark(nm); $('nameHint').innerHTML = ''; return false; }; } }
+  else if (f.nameLat && !cur) nm.placeholder = f.nameLat;   /* только подсказка: ФИО в договор — кириллицей, своей рукой */
   return k;
 }
 document.addEventListener('input', function(e) { if (e.target && e.target.classList) e.target.classList.remove('rec'); });
