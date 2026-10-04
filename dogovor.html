@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#173f67">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
 <style>
-/* Страница договора для родителей (v1, сборка 559). Оформление — как у прежней страницы в журнале.
+/* Страница договора для родителей (v2, сборка 560: данные паспорта из анкеты, подпись словом, вёрстка договора ctdoc.js). Оформление — как у прежней страницы в журнале.
    Данные берутся из журнала «Планета» запросом без cookies, поэтому Google-аккаунты на телефоне на страницу не влияют. */
 *{box-sizing:border-box}
 body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;background:#e9eef5;color:#1b2333;padding:14px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
@@ -18,8 +18,11 @@ label{display:block;font-size:11px;font-weight:700;color:#7b8ea6;letter-spacing:
 input{width:100%;border:1.5px solid #d9dee8;border-radius:10px;padding:11px 12px;font-size:16px;font-family:inherit;background:#fff;color:#1b2333}
 input:focus{outline:none;border-color:#173f67}
 .box{background:#fff7ed;border:1.5px solid #fde68a;border-radius:12px;padding:10px 12px;margin:10px 0}
-.doc{border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.5;max-height:52vh;overflow:auto;margin:12px 0;font-family:"Times New Roman",serif;-webkit-overflow-scrolling:touch}
-.doc h3{font-size:14px;margin:10px 0 4px}.doc p{margin:0 0 6px;text-align:justify}
+.doc{border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;max-height:52vh;overflow:auto;margin:12px 0;-webkit-overflow-scrolling:touch}
+.doc.full{max-height:none}
+.box.sig{background:#eef6ff;border-color:#bfdbfe}
+#p_sign{font-family:"Segoe Script","Brush Script MT","Snell Roundhand",cursive;font-size:20px;color:#173f67}
+.pre{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;border-radius:10px;padding:8px 10px;font-size:12.5px;margin:6px 0 2px}
 .sw{display:flex;gap:6px;flex-wrap:wrap}
 .sw button{flex:1;min-width:70px;border:1.5px solid #d9dee8;border-radius:10px;padding:11px 6px;font-size:15px;font-weight:700;background:#fff;color:#1b2333;cursor:pointer;font-family:inherit}
 .sw button.on{background:#173f67;color:#fff;border-color:#173f67}
@@ -38,12 +41,59 @@ input:focus{outline:none;border-color:#173f67}
 .fail a{color:#173f67;font-weight:700}
 .retry{margin-top:10px;background:#fff;color:#173f67;border:1.5px solid #173f67}
 </style>
+<style id="ctdocCss"></style>
 </head>
 <body>
 <div class="w" id="w">
   <div class="load" id="load">📄 Келишим жүктөлүүдө… / Загружаем договор…<div class="bar"><i></i></div></div>
 </div>
 <script>
+/* ctdoc.js — общий отрисовщик договора (сборка 560). Используется в pages/dogovor.html (страница родителя) и в SearchPage.html
+   (окно «Договор» в кабинете и печать). Вход: сохранённый текст договора (строки через \n) и список значений, которые надо выделить
+   (данные родителя). Выход: HTML с классами .ttl .num .dt .party .d h3 p .signs .who .sg .sigline .mute .note — стили в контейнере .ctdoc. */
+function ctDocHtml(text, marks) {
+  var esc = function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var ms = (marks || []).map(function(v) { return String(v || '').trim(); }).filter(function(v) { return v.length >= 3; }).sort(function(a, b) { return b.length - a.length; });
+  var re = ms.length ? new RegExp(ms.map(function(v) { return esc(v).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|'), 'g') : null;
+  var hl = function(s) { var e = esc(s); return re ? e.replace(re, function(m) { return '<b class="d">' + m + '</b>'; }) : e; };
+  var lines = String(text || '').split('\n').map(function(s) { return s.trim(); });
+  var notes = []; lines = lines.filter(function(l) { if (/^\[.*\]$/.test(l)) { notes.push(l); return false; } return true; });
+  var isHead = function(l) { return /^\d+\. [^a-zа-я]*$/.test(l); };
+  var out = [], i = 0;
+  while (i < lines.length && !lines[i]) i++;
+  if (i < lines.length && !/^КЕЛИШИМ/.test(lines[i]) && !isHead(lines[i])) { out.push('<div class="ttl">' + hl(lines[i]) + '</div>'); i++; }
+  if (i < lines.length && /^КЕЛИШИМ №/.test(lines[i])) { out.push('<div class="num">' + hl(lines[i]) + '</div>'); i++; }
+  var sig6 = -1; for (var k = i; k < lines.length; k++) if (/^6\. /.test(lines[k]) && /РЕКВИЗИТ|КОЛ ТАМГА/.test(lines[k])) { sig6 = k; break; }
+  var party = [], flush = function() { if (party.length) { out.push('<div class="party">' + party.join('') + '</div>'); party = []; } };
+  for (; i < (sig6 < 0 ? lines.length : sig6); i++) {
+    var l = lines[i]; if (!l) continue;
+    if (/^Талас шаары/.test(l)) { flush(); var m = l.match(/^(Талас шаары)\s+(.*)$/); out.push('<div class="dt"><span>' + hl(m ? m[1] : l) + '</span><span>' + hl(m ? m[2] : '') + '</span></div>'); continue; }
+    if (/^(Ата-эненин\/Мыйзамдуу өкүлдүн Аты-жөнү|Паспорт \(сериясы, номери\)|Дареги \/ Адрес|Телефон 1):/.test(l)) { party.push('<div>' + hl(l) + '</div>'); continue; }
+    flush();
+    out.push(isHead(l) ? '<h3>' + hl(l) + '</h3>' : '<p>' + hl(l) + '</p>');
+  }
+  flush();
+  if (sig6 >= 0) {
+    out.push('<h3>' + hl(lines[sig6]) + '</h3>');
+    var left = [], right = [], side = 0;
+    for (var j = sig6 + 1; j < lines.length; j++) {
+      var s = lines[j]; if (!s) continue;
+      if (/^АТКАРУУЧУ/.test(s)) { side = 1; right.push('<div class="who">' + hl(s.replace(/:$/, '')) + '</div>'); continue; }
+      if (/^БУЮРТМАЧЫ/.test(s)) { side = 0; left.push('<div class="who">' + hl(s.replace(/:$/, '')) + '</div>'); continue; }
+      if (side === 0) {
+        var sm = s.match(/^Кол тамгасы:\s*(.*)$/);
+        if (sm) { var v = sm[1], mm = v.match(/^«([^»]+)»\s*—\s*(.*)$/); left.push(mm ? '<div class="sg">Кол тамгасы: <span class="sigline">' + esc(mm[1]) + '</span></div><div class="mute">' + hl(mm[2]) + '</div>' : '<div class="sg">' + hl(s) + '</div>'); continue; }
+        left.push('<div>' + hl(s) + '</div>');
+      } else right.push('<div>' + hl(s) + '</div>');
+    }
+    out.push('<div class="signs"><div>' + left.join('') + '</div><div>' + right.join('') + '</div></div>');
+  }
+  notes.forEach(function(nn) { out.push('<p class="note">' + esc(nn) + '</p>'); });
+  return out.join('');
+}
+var CTDOC_CSS = '.ctdoc{font-family:"Times New Roman",Times,serif;font-size:14px;line-height:1.55;color:#111}.ctdoc .ttl{text-align:center;font-weight:700;font-size:15px;margin:0 0 2px}.ctdoc .num{text-align:center;font-weight:700;margin:0 0 8px}.ctdoc .dt{display:flex;justify-content:space-between;gap:12px;color:#334155;margin:0 0 10px}.ctdoc .party{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;margin:8px 0}.ctdoc .party div{margin:2px 0}.ctdoc b.d{background:#fef3c7;padding:0 3px;border-radius:3px;font-weight:700}.ctdoc h3{font-size:14px;margin:12px 0 4px;text-transform:uppercase;letter-spacing:.3px}.ctdoc p{margin:0 0 5px;text-align:justify}.ctdoc .signs{display:flex;gap:14px;margin-top:12px}.ctdoc .signs>div{flex:1;min-width:0;border-top:1px solid #cbd5e1;padding-top:8px}.ctdoc .who{font-weight:700;font-size:12.5px;letter-spacing:.3px;margin-bottom:2px}.ctdoc .sg{margin-top:8px}.ctdoc .sigline{font-family:"Segoe Script","Brush Script MT","Snell Roundhand",cursive;font-size:21px;color:#173f67;border-bottom:1.5px solid #173f67;display:inline-block;padding:0 6px 2px;min-width:120px}.ctdoc .mute{color:#64748b;font-size:12px}.ctdoc .note{color:#64748b;font-size:12px;margin-top:10px}@media (max-width:480px){.ctdoc .signs{flex-direction:column}}@media print{.ctdoc .party{border-color:#000;background:#fff}.ctdoc b.d{background:#fff}.ctdoc .sigline{color:#000;border-color:#000}}';
+
+document.getElementById('ctdocCss').textContent = CTDOC_CSS;
 /* Адрес журнала «Планета» (веб-приложение Apps Script). Запросы идут без cookies — анонимно, поэтому аккаунты Google на телефоне не мешают. */
 var API = 'https://script.google.com/macros/s/AKfycby0O1aycallOk5fTZUa5L_CG432hMARssdKtmOHsJzMaqOHvFUkYrYUCQKeqyTxCW8rcQ/exec';
 var Q = new URLSearchParams(location.search), ID = String(Q.get('id') || ''), T = String(Q.get('t') || '');
@@ -56,8 +106,24 @@ function api(params) {
     try { return JSON.parse(t); } catch (e) { throw new Error('bad json'); }
   });
 }
-function docHtml(text) {
-  return String(text || '').split('\n').map(function(s) { return s.trim(); }).filter(Boolean).map(function(ln) { return /^\d+\. [^a-zа-я]*$/.test(ln) ? '<h3>' + esc(ln) + '</h3>' : '<p>' + esc(ln) + '</p>'; }).join('');
+function docHtml(text, marks) { return ctDocHtml(text, marks || []); }
+/* данные паспорта из анкеты (как сохранены в заявке) → поля формы */
+function parsePass(d) {
+  var o = { ser: '', serOther: '', num: '', mkk: true, code: '', date: '', valid: '' };
+  var p = String(d.passport || '').trim().replace(/\s+/g, ' ');
+  if (p) { var m = p.match(/^([A-Za-zА-Яа-я]{1,3})\s*([0-9A-Za-z]{3,})$/); if (m) { var sr = m[1].toUpperCase(); if (['ID', 'AN', 'AC'].indexOf(sr) >= 0) o.ser = sr; else { o.ser = 'other'; o.serOther = sr; } o.num = m[2].toUpperCase(); } else { o.ser = 'other'; o.serOther = ''; o.num = p.replace(/\s/g, ''); } }
+  var iss = String(d.passIssued || '').trim();
+  if (iss) { var dm = iss.match(/(\d{2})\.(\d{2})\.(\d{4})/); if (dm) { o.date = dm[3] + '-' + dm[2] + '-' + dm[1]; iss = iss.replace(dm[0], '').replace(/[,\s]+$/, '').trim(); } var mk = iss.match(/^МКК\s*(.*)$/i); if (mk) { o.mkk = true; o.code = mk[1].trim(); } else { o.mkk = false; o.code = iss; } }
+  var vm = String(d.passValid || '').match(/(\d{2})\.(\d{2})\.(\d{4})/); if (vm) o.valid = vm[3] + '-' + vm[2] + '-' + vm[1];
+  return o;
+}
+function prefill(d) {
+  var o = parsePass(d), had = false;
+  if (o.ser) { had = true; var b = o.ser === 'other' ? document.querySelector('#p_ser button:last-child') : Array.prototype.filter.call(document.querySelectorAll('#p_ser button'), function(x) { return x.textContent.trim() === o.ser; })[0]; if (b) pick(b); if (o.ser === 'other') $('p_ser_other').value = o.serOther; $('p_num').value = o.num; }
+  if (o.code || o.date) { had = true; pick(o.mkk ? document.querySelector('#p_iss button:first-child') : document.querySelector('#p_iss button:last-child')); $('p_code').value = o.code; }
+  if (o.date) { had = true; $('p_date').value = o.date; }
+  if (o.valid) { had = true; $('p_valid').value = o.valid; }
+  if (had) $('pre').style.display = 'block';
 }
 function showFail(msg, canRetry) {
   $('w').innerHTML = '<h1>📄 Окуу келишими</h1><div class="fail">' + esc(msg) + '<br><br>Суроолор боюнча / по вопросам: WhatsApp <a href="https://wa.me/996' + PHONE_CENTRE.replace(/\D/g, '').replace(/^0/, '') + '">' + esc(PHONE_CENTRE) + '</a>.<br>Келишимге макул болсоңуз — чатка «Макул» деп жазсаңыз да болот. / Можно также ответить «Макул» в чат.</div>'
@@ -67,8 +133,8 @@ function render(d) {
   var f = function(id2, label, val, ph) { return '<label>' + label + '</label><input id="' + id2 + '" value="' + esc(val || '') + '" placeholder="' + esc(ph || '') + '" autocomplete="off">'; };
   var head = '<h1>📄 Окуу келишими · ' + esc(d.student) + '</h1><div class="sub">' + esc(d.centre || '«Планета» билим берүү борбору') + ' · ' + esc(d.date || '') + '</div>';
   if (d.done) {
-    $('w').innerHTML = head + '<div class="ok">✓ Келишим кабыл алынган · ' + esc(d.when || '') + '</div><div class="mute" style="margin-top:8px">Договор уже принят. Рахмат! Төмөндө — сиз макул болгон келишимдин тексти.</div><div class="doc">' + docHtml(d.text) + '</div>'
-      + (d.when ? '<div class="stamp"><b>Окудум, макулмун / Прочитал(а), согласен(на).</b> Электрондук түрдө кабыл алынды: ' + esc(d.when) + (d.stampPhone ? ', WhatsApp ' + esc(d.stampPhone) : '') + (d.stampParent ? ', ' + esc(d.stampParent) : '') + '.</div>' : '');
+    $('w').innerHTML = head + '<div class="ok">✓ Келишим кабыл алынган · ' + esc(d.when || '') + '</div><div class="mute" style="margin-top:8px">Договор уже принят. Рахмат! Төмөндө — сиз макул болгон келишимдин тексти.</div><div class="doc full ctdoc">' + docHtml(d.text, d.marks) + '</div>'
+      + (d.when ? '<div class="stamp"><b>Окудум, макулмун / Прочитал(а), согласен(на).</b> Электрондук түрдө кабыл алынды: ' + esc(d.when) + (d.sign ? ' · кол тамга: «' + esc(d.sign) + '»' : '') + (d.stampPhone ? ' · WhatsApp ' + esc(d.stampPhone) : '') + (d.stampParent ? ' · ' + esc(d.stampParent) : '') + '.</div>' : '');
     return;
   }
   $('w').innerHTML = head
@@ -78,9 +144,12 @@ function render(d) {
     + '<div class="two"><div><label>НОМЕРИ / НОМЕР (только цифры)</label><input id="p_num" placeholder="1234567" inputmode="numeric" autocomplete="off" oninput="this.value=this.value.replace(/[^0-9A-Za-z]/g,\'\').toUpperCase()"></div><div id="p_ser_other_box" class="hidden"><label>СЕРИЯ</label><input id="p_ser_other" placeholder="AB" autocomplete="off" oninput="this.value=this.value.toUpperCase()"></div></div>'
     + '<label>КИМ БЕРГЕН / КЕМ ВЫДАН</label><div class="two"><div style="flex:.6"><div class="sw" id="p_iss"><button type="button" onclick="pick(this)">МКК</button><button type="button" onclick="pick(this)">Башка / Другой</button></div></div><div><input id="p_code" placeholder="код, например 213011" inputmode="numeric" autocomplete="off" oninput="this.value=this.value.toUpperCase()"></div></div>'
     + '<div class="two"><div><label>КАЧАН БЕРИЛГЕН / КОГДА ВЫДАН</label><input id="p_date" type="date"></div><div><label>ЖАРАКТУУ МӨӨНӨТҮ / ДЕЙСТВИТЕЛЕН ДО</label><input id="p_valid" type="date"></div></div>'
-    + f('p_addr', 'ДАРЕГИ / АДРЕС', d.addr, 'Талас ш., Манас көч., 12') + '</div>'
-    + '<b>2. Келишимдин тексти</b><div class="doc">' + docHtml(d.text) + '</div>'
+    + f('p_addr', 'ДАРЕГИ / АДРЕС', d.addr, 'Талас ш., Манас көч., 12') + '<div class="pre" id="pre" style="display:none">✓ Паспорттун маалыматтары анкетадан алынды — текшерип чыгыңыз. / Данные паспорта подставлены из анкеты — проверьте.</div></div>'
+    + '<b>2. Келишимдин тексти</b><div class="doc ctdoc">' + docHtml(d.text, d.marks) + '</div>'
+    + '<div class="box sig"><b>3. Кол тамга / Подпись</b><div class="mute">Кол тамганын ордуна өз колуңуз менен жазыңыз — мисалы «Макулмун» же атыңызды. / Вместо подписи напишите своей рукой — например «Макулмун» или своё имя.</div>'
+    + '<label>КОЛ ТАМГА / ПОДПИСЬ</label><input id="p_sign" placeholder="Макулмун" autocomplete="off" maxlength="60"><div class="mute" style="margin-top:6px">Жазганыңыз келишимге кол тамга катары жазылат — дата, убакыт жана WhatsApp номери менен бирге.</div></div>'
     + '<div class="err" id="err"></div><button class="btn" id="b" onclick="go()">Окудум, макулмун ✓</button><div class="mute" style="margin-top:8px;text-align:center">Прочитал(а), согласен(на). Баскычты басканда келишим кабыл алынды деп эсептелет: дата, убакыт жана номер журналга жазылат.</div>';
+  prefill(d);
 }
 function pick(b) { var box = b.parentNode; box.querySelectorAll('button').forEach(function(x) { x.classList.toggle('on', x === b); }); if (box.id === 'p_ser') $('p_ser_other_box').classList.toggle('hidden', !/Башка/.test(b.textContent)); if (box.id === 'p_iss') $('p_code').placeholder = /МКК/.test(b.textContent) ? 'код, например 213011' : 'название органа / органдын аталышы'; }
 function sel(id) { var b = document.querySelector('#' + id + ' button.on'); return b ? b.textContent.trim() : ''; }
@@ -88,14 +157,16 @@ function d2(v) { return v ? String(v).split('-').reverse().join('.') : ''; }
 function go() {
   var ser = /Башка/.test(sel('p_ser')) ? $('p_ser_other').value.trim().toUpperCase() : sel('p_ser'), num = $('p_num').value.trim(), issSel = sel('p_iss'), code = $('p_code').value.trim().toUpperCase();
   var pass = (ser + ' ' + num).trim(), iss = ((/МКК/.test(issSel) ? 'МКК ' : '') + code).trim() + (d2($('p_date').value) ? ', ' + d2($('p_date').value) : '');
-  var d = { name: $('p_name').value.trim(), pass: pass, iss: iss, val: d2($('p_valid').value), addr: $('p_addr').value.trim() }, e = $('err'); e.style.display = 'none';
+  var d = { name: $('p_name').value.trim(), pass: pass, iss: iss, val: d2($('p_valid').value), addr: $('p_addr').value.trim(), sign: $('p_sign').value.trim().replace(/\s+/g, ' ') }, e = $('err'); e.style.display = 'none';
   if (d.name.length < 5) { e.textContent = 'Ата-эненин аты-жөнүн жазыңыз / Напишите ФИО родителя.'; e.style.display = 'block'; return; }
   if (!ser || !num) { e.textContent = 'Паспорттун сериясын тандап, номерин жазыңыз / Выберите серию и напишите номер.'; e.style.display = 'block'; return; }
+  if (d.sign.replace(/[^A-Za-zА-Яа-яЁёҢңӨөҮү]/g, '').length < 3) { e.textContent = 'Кол тамганын ордуна сөз жазыңыз — мисалы «Макулмун» же атыңызды. / Напишите подпись словом — например «Макулмун» или своё имя.'; e.style.display = 'block'; $('p_sign').focus(); return; }
   var b = $('b'); b.disabled = true; b.textContent = 'Сакталууда…';
-  api({ op: 'accept', id: ID, t: T, name: d.name, pass: d.pass, iss: d.iss, val: d.val, addr: d.addr }).then(function(r) {
+  api({ op: 'accept', id: ID, t: T, name: d.name, pass: d.pass, iss: d.iss, val: d.val, addr: d.addr, sign: d.sign }).then(function(r) {
     if (!r || !r.ok) { b.disabled = false; b.textContent = 'Окудум, макулмун ✓'; e.textContent = (r && r.error) || 'Сакталган жок, кайра басыңыз.'; e.style.display = 'block'; return; }
-    $('w').innerHTML = '<h1>✓ Рахмат!</h1><div class="ok">Келишим кабыл алынды · ' + esc(r.when || '') + '</div><div class="mute" style="margin-top:10px">Договор принят. Келишимдин көчүрмөсү борбордо сакталат; ошол эле шилтеме аркылуу аны каалаган убакта окуй аласыз.</div>';
+    $('w').innerHTML = '<h1>✓ Рахмат!</h1><div class="ok">Келишим кабыл алынды · ' + esc(r.when || '') + '</div><div class="mute" style="margin-top:10px">Договор принят. Келишимдин көчүрмөсү борбордо сакталат; ошол эле шилтеме аркылуу аны каалаган убакта окуй аласыз.</div><div class="load" id="load2">Кол коюлган келишим жүктөлүүдө… <div class="bar"><i></i></div></div>';
     window.scrollTo(0, 0);
+    api({ id: ID, t: T }).then(function(d2x) { var l2 = $('load2'); if (!l2) return; if (d2x && d2x.ok && d2x.text) { l2.outerHTML = '<div class="doc full ctdoc" style="margin-top:12px">' + docHtml(d2x.text, d2x.marks) + '</div>'; } else l2.remove(); }).catch(function() { var l2 = $('load2'); if (l2) l2.remove(); });
   }).catch(function() { b.disabled = false; b.textContent = 'Окудум, макулмун ✓'; e.textContent = 'Байланыш үзүлдү, кайра басыңыз / Связь прервалась, нажмите ещё раз.'; e.style.display = 'block'; });
 }
 function load() {
