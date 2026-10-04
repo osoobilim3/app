@@ -8,7 +8,8 @@
 <meta name="theme-color" content="#173f67">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
 <style>
-/* Страница договора для родителей (v2, сборка 560: данные паспорта из анкеты, подпись словом, вёрстка договора ctdoc.js). Оформление — как у прежней страницы в журнале.
+/* Страница договора для родителей (v3, сборка 561: паспорт по фото — снимок сжимается на телефоне, журнал распознаёт текст и возвращает только данные,
+   снимок нигде не сохраняется; v2 — данные паспорта из анкеты, подпись словом, вёрстка договора ctdoc.js). Оформление — как у прежней страницы в журнале.
    Данные берутся из журнала «Планета» запросом без cookies, поэтому Google-аккаунты на телефоне на страницу не влияют. */
 *{box-sizing:border-box}
 body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;background:#e9eef5;color:#1b2333;padding:14px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
@@ -40,6 +41,16 @@ input:focus{outline:none;border-color:#173f67}
 .fail{background:#fff7ed;border:1.5px solid #fde68a;border-radius:12px;padding:14px;font-size:14px;line-height:1.5}
 .fail a{color:#173f67;font-weight:700}
 .retry{margin-top:10px;background:#fff;color:#173f67;border:1.5px solid #173f67}
+/* v3: паспорт по фото */
+.cam{display:flex;align-items:center;gap:10px;width:100%;border:1.5px dashed #173f67;background:#f5f9ff;color:#173f67;border-radius:12px;padding:11px 12px;font-size:14.5px;font-weight:700;font-family:inherit;text-align:left;cursor:pointer;margin-top:12px}
+.cam small{display:block;font-weight:400;color:#64748b;font-size:11.5px;margin-top:2px}
+.busy{background:#eef6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:10px 12px;font-size:13.5px;color:#1e3a8a;margin-top:12px}
+.busy .bar{width:100%;height:3px;border-radius:2px;background:#dbeafe;margin-top:8px;overflow:hidden}.busy .bar i{display:block;width:38%;height:100%;background:#2f7fe0;border-radius:2px;animation:slide 1.15s ease-in-out infinite}
+.done{background:#ecfdf5;border:1.5px solid #a7f3d0;border-radius:12px;padding:10px 12px;font-size:13px;color:#065f46;margin-top:12px}.done a{color:#173f67;font-weight:700}
+.warn{background:#fff7ed;border:1.5px solid #fdba74;border-radius:12px;padding:10px 12px;font-size:13px;color:#9a3412;margin-top:12px}
+input.rec{border-color:#34d399;background:#f0fdf4}.sw button.rec{border-color:#34d399}.sw button.on.rec{box-shadow:0 0 0 2px #a7f3d0}
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;left:-9999px}
+.done label{color:#173f67;font-weight:700;text-decoration:underline;cursor:pointer}
 </style>
 <style id="ctdocCss"></style>
 </head>
@@ -97,12 +108,23 @@ document.getElementById('ctdocCss').textContent = CTDOC_CSS;
 /* Адрес журнала «Планета» (веб-приложение Apps Script). Запросы идут без cookies — анонимно, поэтому аккаунты Google на телефоне не мешают. */
 var API = 'https://script.google.com/macros/s/AKfycby0O1aycallOk5fTZUa5L_CG432hMARssdKtmOHsJzMaqOHvFUkYrYUCQKeqyTxCW8rcQ/exec';
 var Q = new URLSearchParams(location.search), ID = String(Q.get('id') || ''), T = String(Q.get('t') || '');
+/* v3: &test=1 — тестовый режим (журнал разрешает его только для ссылки на номер руководителя): форма открывается и у принятого договора, ничего не сохраняется */
+var TEST = Q.get('test') === '1';
 var PHONE_CENTRE = '0755 494 494';
 function $(i) { return document.getElementById(i); }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function api(params) {
+  if (TEST) params = Object.assign({ test: '1' }, params);
   var u = API + '?page=dogovor_api&' + new URLSearchParams(params).toString();
   return fetch(u, { method: 'GET', credentials: 'omit', redirect: 'follow', cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
+    try { return JSON.parse(t); } catch (e) { throw new Error('bad json'); }
+  });
+}
+/* v3: запрос с телом (снимок) — тоже без cookies; text/plain, чтобы браузер не делал предварительный запрос, который журнал не понимает */
+function apiPost(obj) {
+  if (TEST) obj = Object.assign({ test: '1' }, obj);
+  var ctl = typeof AbortController === 'function' ? new AbortController() : null; if (ctl) setTimeout(function() { ctl.abort(); }, 90000);
+  return fetch(API + '?page=dogovor_api', { method: 'POST', body: JSON.stringify(obj), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, credentials: 'omit', redirect: 'follow', signal: ctl ? ctl.signal : undefined }).then(function(r) { return r.text(); }).then(function(t) {
     try { return JSON.parse(t); } catch (e) { throw new Error('bad json'); }
   });
 }
@@ -131,7 +153,8 @@ function showFail(msg, canRetry) {
 }
 function render(d) {
   var f = function(id2, label, val, ph) { return '<label>' + label + '</label><input id="' + id2 + '" value="' + esc(val || '') + '" placeholder="' + esc(ph || '') + '" autocomplete="off">'; };
-  var head = '<h1>📄 Окуу келишими · ' + esc(d.student) + '</h1><div class="sub">' + esc(d.centre || '«Планета» билим берүү борбору') + ' · ' + esc(d.date || '') + '</div>';
+  var head = '<h1>📄 Окуу келишими · ' + esc(d.student) + '</h1><div class="sub">' + esc(d.centre || '«Планета» билим берүү борбору') + ' · ' + esc(d.date || '') + '</div>'
+    + (d.test ? '<div class="warn" id="testBar" style="margin:0 0 10px">🧪 Сынак — эч нерсе сакталбайт. / Тест — ничего не сохраняется.</div>' : '');
   if (d.done) {
     $('w').innerHTML = head + '<div class="ok">✓ Келишим кабыл алынган · ' + esc(d.when || '') + '</div><div class="mute" style="margin-top:8px">Договор уже принят. Рахмат! Төмөндө — сиз макул болгон келишимдин тексти.</div><div class="doc full ctdoc">' + docHtml(d.text, d.marks) + '</div>'
       + (d.when ? '<div class="stamp"><b>Окудум, макулмун / Прочитал(а), согласен(на).</b> Электрондук түрдө кабыл алынды: ' + esc(d.when) + (d.sign ? ' · кол тамга: «' + esc(d.sign) + '»' : '') + (d.stampPhone ? ' · WhatsApp ' + esc(d.stampPhone) : '') + (d.stampParent ? ' · ' + esc(d.stampParent) : '') + '.</div>' : '');
@@ -140,6 +163,7 @@ function render(d) {
   $('w').innerHTML = head
     + '<div class="box"><b>1. Ата-эненин маалыматтары</b><div class="mute">Келишим үчүн керек. Кыргызча же орусча жазсаңыз болот.</div>'
     + f('p_name', 'АТА-ЭНЕНИН АТЫ-ЖӨНҮ / ФИО РОДИТЕЛЯ', d.parent, 'Асанова Айгуль Бакытовна')
+    + '<div id="cam"></div>'
     + '<label>ПАСПОРТ — СЕРИЯСЫ / СЕРИЯ</label><div class="sw" id="p_ser"><button type="button" onclick="pick(this)">ID</button><button type="button" onclick="pick(this)">AN</button><button type="button" onclick="pick(this)">AC</button><button type="button" onclick="pick(this)">Башка / Другая</button></div>'
     + '<div class="two"><div><label>НОМЕРИ / НОМЕР (только цифры)</label><input id="p_num" placeholder="1234567" inputmode="numeric" autocomplete="off" oninput="this.value=this.value.replace(/[^0-9A-Za-z]/g,\'\').toUpperCase()"></div><div id="p_ser_other_box" class="hidden"><label>СЕРИЯ</label><input id="p_ser_other" placeholder="AB" autocomplete="off" oninput="this.value=this.value.toUpperCase()"></div></div>'
     + '<label>КИМ БЕРГЕН / КЕМ ВЫДАН</label><div class="two"><div style="flex:.6"><div class="sw" id="p_iss"><button type="button" onclick="pick(this)">МКК</button><button type="button" onclick="pick(this)">Башка / Другой</button></div></div><div><input id="p_code" placeholder="код, например 213011" inputmode="numeric" autocomplete="off" oninput="this.value=this.value.toUpperCase()"></div></div>'
@@ -149,7 +173,7 @@ function render(d) {
     + '<div class="box sig"><b>3. Кол тамга / Подпись</b><div class="mute">Кол тамганын ордуна өз колуңуз менен жазыңыз — мисалы «Макулмун» же атыңызды. / Вместо подписи напишите своей рукой — например «Макулмун» или своё имя.</div>'
     + '<label>КОЛ ТАМГА / ПОДПИСЬ</label><input id="p_sign" placeholder="Макулмун" autocomplete="off" maxlength="60"><div class="mute" style="margin-top:6px">Жазганыңыз келишимге кол тамга катары жазылат — дата, убакыт жана WhatsApp номери менен бирге.</div></div>'
     + '<div class="err" id="err"></div><button class="btn" id="b" onclick="go()">Окудум, макулмун ✓</button><div class="mute" style="margin-top:8px;text-align:center">Прочитал(а), согласен(на). Баскычты басканда келишим кабыл алынды деп эсептелет: дата, убакыт жана номер журналга жазылат.</div>';
-  prefill(d);
+  prefill(d); camReset();
 }
 function pick(b) { var box = b.parentNode; box.querySelectorAll('button').forEach(function(x) { x.classList.toggle('on', x === b); }); if (box.id === 'p_ser') $('p_ser_other_box').classList.toggle('hidden', !/Башка/.test(b.textContent)); if (box.id === 'p_iss') $('p_code').placeholder = /МКК/.test(b.textContent) ? 'код, например 213011' : 'название органа / органдын аталышы'; }
 function sel(id) { var b = document.querySelector('#' + id + ' button.on'); return b ? b.textContent.trim() : ''; }
@@ -164,11 +188,54 @@ function go() {
   var b = $('b'); b.disabled = true; b.textContent = 'Сакталууда…';
   api({ op: 'accept', id: ID, t: T, name: d.name, pass: d.pass, iss: d.iss, val: d.val, addr: d.addr, sign: d.sign }).then(function(r) {
     if (!r || !r.ok) { b.disabled = false; b.textContent = 'Окудум, макулмун ✓'; e.textContent = (r && r.error) || 'Сакталган жок, кайра басыңыз.'; e.style.display = 'block'; return; }
+    if (TEST && r.test) { $('w').innerHTML = '<h1>✓ Сынак өттү / Тест пройден</h1><div class="ok">Баары иштейт. Эч нерсе сакталган жок. / Всё работает, ничего не сохранено.</div><div class="mute" style="margin-top:10px">Шилтемени кайра ачып, дагы текшерсе болот. / Ссылку можно открыть снова и проверить ещё раз.</div>'; window.scrollTo(0, 0); return; }
     $('w').innerHTML = '<h1>✓ Рахмат!</h1><div class="ok">Келишим кабыл алынды · ' + esc(r.when || '') + '</div><div class="mute" style="margin-top:10px">Договор принят. Келишимдин көчүрмөсү борбордо сакталат; ошол эле шилтеме аркылуу аны каалаган убакта окуй аласыз.</div><div class="load" id="load2">Кол коюлган келишим жүктөлүүдө… <div class="bar"><i></i></div></div>';
     window.scrollTo(0, 0);
     api({ id: ID, t: T }).then(function(d2x) { var l2 = $('load2'); if (!l2) return; if (d2x && d2x.ok && d2x.text) { l2.outerHTML = '<div class="doc full ctdoc" style="margin-top:12px">' + docHtml(d2x.text, d2x.marks) + '</div>'; } else l2.remove(); }).catch(function() { var l2 = $('load2'); if (l2) l2.remove(); });
   }).catch(function() { b.disabled = false; b.textContent = 'Окудум, макулмун ✓'; e.textContent = 'Байланыш үзүлдү, кайра басыңыз / Связь прервалась, нажмите ещё раз.'; e.style.display = 'block'; });
 }
+/* v3: паспорт по фото. Снимок сжимается здесь, на телефоне, и уходит в журнал одним запросом; журнал распознаёт текст и возвращает только данные
+   полей — сам снимок никуда не сохраняется (так и написано родителю). При любой ошибке поля остаются для ручного ввода. */
+/* кнопка — это подпись к полю выбора файла (label): так камера/галерея открываются на iPhone надёжно, без имитации нажатия из скрипта */
+var CAM_INPUT = '<input type="file" id="camfile" accept="image/*" class="vh" onchange="camGot(this.files && this.files[0])">';
+var CAM_BTN = '<label class="cam" id="camBtn" for="camfile">📷 <span>Паспортту сүрөткө тартуу / Сфотографировать паспорт<small>ID-картанын арт жагын тартыңыз — маалыматтар өзү толот. Сүрөт сакталбайт. / Снимите обратную сторону — поля заполнятся сами. Фото не сохраняется.</small></span></label>' + CAM_INPUT;
+var CAM_FAIL = 'Окуй алган жокпуз — сүрөттү кайра тартыңыз же колуңуз менен жазыңыз. / Не удалось прочитать — снимите ещё раз или впишите вручную.';
+function camReset() { var c = $('cam'); if (c) c.innerHTML = CAM_BTN; }
+function camPick() { var f = $('camfile'); if (f) { f.value = ''; f.click(); } }
+function camShrink(file) {
+  return new Promise(function(res, rej) {
+    var url = URL.createObjectURL(file), im = new Image();
+    im.onload = function() { try { var w = im.naturalWidth || im.width, h = im.naturalHeight || im.height, k = Math.min(1, 1800 / Math.max(w, h, 1)); var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k)); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', 0.82)); } catch (e) { rej(e); } };
+    im.onerror = function() { URL.revokeObjectURL(url); rej(new Error('img')); };
+    im.src = url;
+  });
+}
+function camGot(file) {
+  if (!file) return;
+  $('cam').innerHTML = '<div class="busy" id="camBusy">⏳ Паспортту окуп жатабыз… / Распознаём паспорт…<div class="bar"><i></i></div></div>';
+  camShrink(file).then(function(img) { return apiPost({ op: 'ocr', id: ID, t: T, img: img }); }).then(function(r) {
+    if (!r || !r.ok) { camFail((r && r.error) || CAM_FAIL); return; }
+    var k = camFill(r.found || {});
+    if (!k) { camFail(CAM_FAIL); return; }
+    var ru = k === 1 ? 'поле' : k < 5 ? 'поля' : 'полей';
+    $('cam').innerHTML = '<div class="done" id="camDone">✓ Сүрөттөн ' + k + ' маалымат окулду — текшерип чыгыңыз. / Из снимка прочитано ' + k + ' ' + ru + ' — проверьте.<div class="mute" style="margin-top:4px">Сүрөт сакталган жок. / Фото не сохранено. · <label for="camfile">📷 Кайра тартуу / Снять ещё раз</label></div></div>' + CAM_INPUT;
+    var pre = $('pre'); if (pre) pre.style.display = 'none';
+  }).catch(function() { camFail('Байланыш үзүлдү — кайра аракет кылыңыз же колуңуз менен жазыңыз. / Связь прервалась — попробуйте ещё раз или впишите вручную.'); });
+}
+function camFail(msg) { $('cam').innerHTML = '<div class="warn" id="camWarn">' + esc(msg) + '</div>' + CAM_BTN; }
+function camBtn(boxId, text) { return Array.prototype.filter.call(document.querySelectorAll('#' + boxId + ' button'), function(x) { return x.textContent.trim() === text; })[0]; }
+function camIso(v) { var m = String(v || '').match(/^(\d{2})\.(\d{2})\.(\d{4})$/); return m ? m[3] + '-' + m[2] + '-' + m[1] : ''; }
+/* поля из снимка → форма; заполненное подсвечивается зелёным, пока родитель его не поправит. Возвращает, сколько полей заполнено */
+function camFill(f) {
+  var k = 0, mark = function(el) { if (el) el.classList.add('rec'); };
+  if (f.ser && f.num) { var known = ['ID', 'AN', 'AC'].indexOf(f.ser) >= 0, b = known ? camBtn('p_ser', f.ser) : document.querySelector('#p_ser button:last-child'); if (b) { pick(b); mark(b); } if (!known) { $('p_ser_other').value = f.ser; mark($('p_ser_other')); } $('p_num').value = f.num; mark($('p_num')); k++; }
+  if (f.code) { var bi = f.how === 'МКК' ? document.querySelector('#p_iss button:first-child') : document.querySelector('#p_iss button:last-child'); if (bi) { pick(bi); mark(bi); } $('p_code').value = f.how === 'МКК' ? f.code : String(f.code).replace(/^МКК\s*/i, ''); mark($('p_code')); k++; }
+  if (camIso(f.iss)) { $('p_date').value = camIso(f.iss); mark($('p_date')); k++; }
+  if (camIso(f.val)) { $('p_valid').value = camIso(f.val); mark($('p_valid')); k++; }
+  if (f.nameLat && !$('p_name').value.trim()) $('p_name').placeholder = f.nameLat;   /* только подсказка: ФИО в договор — кириллицей, своей рукой */
+  return k;
+}
+document.addEventListener('input', function(e) { if (e.target && e.target.classList) e.target.classList.remove('rec'); });
 function load() {
   if (!ID || !T) { showFail('Шилтеме толук эмес. Борбордон келишимди кайра жөнөтүүнү сураныңыз. / Ссылка неполная — попросите центр отправить договор заново.', false); return; }
   $('w').innerHTML = '<div class="load" id="load">📄 Келишим жүктөлүүдө… / Загружаем договор…<div class="bar"><i></i></div></div>';
