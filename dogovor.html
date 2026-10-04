@@ -8,7 +8,9 @@
 <meta name="theme-color" content="#173f67">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
 <style>
-/* Страница договора для родителей (v5, сборка 563: «кто заполняет» (мама / папа / представитель) — договор с тем, кто подписал; ученик 18+ — свои данные,
+/* Страница договора для родителей (v6, сборка 564: паспорт по двум сторонам — две плитки «лицевая / обратная», данные считываются сами после второго снимка,
+   карточка «По паспорту» с правкой строк, мама/папа по полу из паспорта, ручной ввод под ссылкой; убраны кнопки ID/AN/AC, МКК/СӨМ и вопрос «кто заполняет»;
+   v5, сборка 563: «кто заполняет» (мама / папа / представитель) — договор с тем, кто подписал; ученик 18+ — свои данные,
    договор с ним самим; предупреждение о просроченном паспорте; «данные подтверждены по машиночитаемой строке» после снимка; v4, сборка 562: скрины из «Түндүк» — несколько картинок за раз, орган СӨМ, адрес прописки, ФИО кириллицей с подсказкой;
    v3 — паспорт по фото: снимок сжимается на телефоне, журнал распознаёт текст и возвращает только данные, снимок нигде не сохраняется;
    v2 — данные паспорта из анкеты, подпись словом, вёрстка договора ctdoc.js). Оформление — как у прежней страницы в журнале.
@@ -55,6 +57,28 @@ input.rec{border-color:#34d399;background:#f0fdf4}.sw button.rec{border-color:#3
 .note2{color:#64748b;font-size:12px;margin-top:6px}
 .hint{background:#eef6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:7px 10px;font-size:12.5px;color:#1e3a8a;margin-top:6px}.hint b{color:#173f67}.hint a{color:#173f67;font-weight:700}
 .done label{color:#173f67;font-weight:700;text-decoration:underline;cursor:pointer}
+/* v6: две стороны паспорта */
+.tiles{display:flex;gap:10px;margin-top:10px}
+.tile{flex:1;border:1.5px dashed #173f67;background:#f5f9ff;border-radius:12px;padding:12px 8px;text-align:center;color:#173f67;font-weight:700;font-size:13.5px;min-height:96px;display:flex;flex-direction:column;justify-content:center;gap:4px;cursor:pointer;background-size:cover;background-position:center;position:relative;overflow:hidden}
+.tile small{display:block;font-weight:400;color:#64748b;font-size:11px}
+.tile.done{border-style:solid;border-color:#34d399;background-color:#f0fdf4;color:#065f46}
+.tile.done .lab{background:rgba(240,253,244,.9);border-radius:8px;padding:4px 6px}
+.tile.need{border-color:#fdba74;background-color:#fff7ed;color:#9a3412}
+.big{display:block;width:100%;background:#173f67;color:#fff;border:0;border-radius:12px;padding:13px;font-size:15px;font-weight:700;margin-top:10px;font-family:inherit;cursor:pointer}
+.big:disabled{background:#cbd5e1;cursor:default}
+.sum{background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:12px;padding:10px 12px;margin-top:10px}
+.sum.manual{background:#fff;border-color:#d9dee8}
+.sum h4{margin:0 0 6px;font-size:13.5px;color:#065f46}.sum.manual h4{color:#1b2333}
+.kv{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px solid #d1fae5}.sum.manual .kv{border-color:#eef2f7}.kv:last-of-type{border:0}
+.kv span{color:#64748b;font-size:12px;flex:0 0 42%}
+.kv input{flex:1;text-align:right;border:1.5px solid transparent;background:transparent;font-weight:700;font-size:14px;padding:6px 6px;border-radius:8px;color:#1b2333}
+.kv input:focus{border-color:#173f67;background:#fff;outline:none}
+.kv input.rec{background:#dcfce7}
+.kv input.need{background:#ffedd5;border-color:#fdba74}
+.sum.manual .kv input{border-color:#d9dee8;background:#fff;text-align:left;font-weight:400}
+.kv.col{flex-direction:column;align-items:stretch;gap:2px}.kv.col span{flex:none}.kv.col input{text-align:left}
+.relrow{font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #d1fae5}.relrow span{color:#64748b;font-size:12px}
+.lnk{color:#173f67;font-weight:700;text-decoration:underline;cursor:pointer;font-size:12.5px;background:none;border:0;font-family:inherit;padding:0}
 </style>
 <style id="ctdocCss"></style>
 </head>
@@ -112,9 +136,9 @@ document.getElementById('ctdocCss').textContent = CTDOC_CSS;
 /* Адрес журнала «Планета» (веб-приложение Apps Script). Запросы идут без cookies — анонимно, поэтому аккаунты Google на телефоне не мешают. */
 var API = 'https://script.google.com/macros/s/AKfycby0O1aycallOk5fTZUa5L_CG432hMARssdKtmOHsJzMaqOHvFUkYrYUCQKeqyTxCW8rcQ/exec';
 var Q = new URLSearchParams(location.search), ID = String(Q.get('id') || ''), T = String(Q.get('t') || '');
-/* v3: &test=1 — тестовый режим (журнал разрешает его только для ссылки на номер руководителя): форма открывается и у принятого договора, ничего не сохраняется */
+/* &test=1 — тестовый режим (журнал разрешает его только для ссылки на номер руководителя): форма открывается и у принятого договора, ничего не сохраняется */
 var TEST = Q.get('test') === '1';
-var D = null, ADULT = false, ANKETA_REL = '';   /* v5: данные договора, ученик 18+, кем приходится родитель из анкеты */
+var D = null, ADULT = false;
 var PHONE_CENTRE = '0755 494 494';
 function $(i) { return document.getElementById(i); }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -125,7 +149,7 @@ function api(params) {
     try { return JSON.parse(t); } catch (e) { throw new Error('bad json'); }
   });
 }
-/* v3: запрос с телом (снимок) — тоже без cookies; text/plain, чтобы браузер не делал предварительный запрос, который журнал не понимает */
+/* запрос с телом (снимки) — тоже без cookies; text/plain, чтобы браузер не делал предварительный запрос, который журнал не понимает */
 function apiPost(obj) {
   if (TEST) obj = Object.assign({ test: '1' }, obj);
   var ctl = typeof AbortController === 'function' ? new AbortController() : null; if (ctl) setTimeout(function() { ctl.abort(); }, 90000);
@@ -134,30 +158,46 @@ function apiPost(obj) {
   });
 }
 function docHtml(text, marks) { return ctDocHtml(text, marks || []); }
-/* данные паспорта из анкеты (как сохранены в заявке) → поля формы */
-function parsePass(d) {
-  var o = { ser: '', serOther: '', num: '', mkk: true, code: '', date: '', valid: '' };
-  var p = String(d.passport || '').trim().replace(/\s+/g, ' ');
-  if (p) { var m = p.match(/^([A-Za-zА-Яа-я]{1,3})\s*([0-9A-Za-z]{3,})$/); if (m) { var sr = m[1].toUpperCase(); if (['ID', 'AN', 'AC'].indexOf(sr) >= 0) o.ser = sr; else { o.ser = 'other'; o.serOther = sr; } o.num = m[2].toUpperCase(); } else { o.ser = 'other'; o.serOther = ''; o.num = p.replace(/\s/g, ''); } }
-  var iss = String(d.passIssued || '').trim();
-  if (iss) { var dm = iss.match(/(\d{2})\.(\d{2})\.(\d{4})/); if (dm) { o.date = dm[3] + '-' + dm[2] + '-' + dm[1]; iss = iss.replace(dm[0], '').replace(/[,\s]+$/, '').trim(); } var mk = iss.match(/^(МКК|СӨМ|СОМ)\s*(.*)$/i); if (mk) { o.mkk = /МКК/i.test(mk[1]) ? true : 'СӨМ'; o.code = mk[2].trim(); } else { o.mkk = false; o.code = iss; } }
-  var vm = String(d.passValid || '').match(/(\d{2})\.(\d{2})\.(\d{4})/); if (vm) o.valid = vm[3] + '-' + vm[2] + '-' + vm[1];
-  return o;
-}
-function prefill(d) {
-  var o = parsePass(d), had = false;
-  if (o.ser) { had = true; var b = o.ser === 'other' ? document.querySelector('#p_ser button:last-child') : Array.prototype.filter.call(document.querySelectorAll('#p_ser button'), function(x) { return x.textContent.trim() === o.ser; })[0]; if (b) pick(b); if (o.ser === 'other') $('p_ser_other').value = o.serOther; $('p_num').value = o.num; }
-  if (o.code || o.date) { had = true; pick(o.mkk === true ? camBtn('p_iss', 'МКК') : o.mkk === 'СӨМ' ? camBtn('p_iss', 'СӨМ') : document.querySelector('#p_iss button:last-child')); $('p_code').value = o.code; }
-  if (o.date) { had = true; $('p_date').value = o.date; }
-  if (o.valid) { had = true; $('p_valid').value = o.valid; }
-  if (had) $('pre').style.display = 'block';
+function d2(v) { return v ? String(v).split('-').reverse().join('.') : ''; }
+function iso(v) { var m = String(v || '').match(/^(\d{2})\.(\d{2})\.(\d{4})$/); return m ? m[3] + '-' + m[2] + '-' + m[1] : ''; }
+/* данные паспорта из анкеты («ID 1234567», «СӨМ 213011, 25.10.2023», «25.10.2033») → поля */
+function anketaPass(d) {
+  var o = { doc: String(d.passport || '').trim().replace(/\s+/g, ' '), issuer: '', date: '', valid: iso(String(d.passValid || '').match(/\d{2}\.\d{2}\.\d{4}/) ? String(d.passValid).match(/\d{2}\.\d{2}\.\d{4}/)[0] : '') };
+  var iss = String(d.passIssued || '').trim(); var dm = iss.match(/(\d{2})\.(\d{2})\.(\d{4})/); if (dm) { o.date = dm[3] + '-' + dm[2] + '-' + dm[1]; iss = iss.replace(dm[0], '').replace(/[,\s]+$/, '').trim(); }
+  o.issuer = iss; return o;
 }
 function showFail(msg, canRetry) {
   $('w').innerHTML = '<h1>📄 Окуу келишими</h1><div class="fail">' + esc(msg) + '<br><br>Суроолор боюнча / по вопросам: WhatsApp <a href="https://wa.me/996' + PHONE_CENTRE.replace(/\D/g, '').replace(/^0/, '') + '">' + esc(PHONE_CENTRE) + '</a>.<br>Келишимге макул болсоңуз — чатка «Макул» деп жазсаңыз да болот. / Можно также ответить «Макул» в чат.</div>'
     + (canRetry ? '<button class="btn retry" onclick="load()">Кайра аракет кылуу / Повторить</button>' : '');
 }
+/* v6: кем приходится — определяется по полу из паспорта; «изменить» — для бабушки, опекуна */
+var REL = '', REL_FROM = '';
+var REL_T = { 'мама': 'Апасы / Мама', 'папа': 'Атасы / Папа', 'представитель': 'Башка өкүл / Представитель' };
+function relRow() {
+  if (ADULT) return '';
+  var v = REL ? REL_T[REL] : '<i style="color:#9a3412;font-style:normal">аныктала элек / не определено</i>';
+  return '<div class="relrow" id="relRow"><span>Окуучуга ким болот / Кем приходится</span><b>' + v + (REL_FROM === 'паспорт' ? ' <span style="font-weight:400">· по паспорту</span>' : '') + ' <button type="button" class="lnk" onclick="relEdit()">изменить</button></b></div>';
+}
+function relEdit() {
+  var row = $('relRow'); if (!row) return;
+  row.outerHTML = '<div class="relrow" id="relRow"><span>Окуучуга ким болот / Кем приходится</span><span class="sw" style="flex:1;gap:4px">' + Object.keys(REL_T).map(function(k) { return '<button type="button" style="padding:7px 4px;font-size:12px' + (k === REL ? ';background:#173f67;color:#fff;border-color:#173f67' : '') + '" onclick="relSet(\'' + k + '\')">' + REL_T[k].split(' / ')[1] + '</button>'; }).join('') + '</span></div>';
+}
+function relSet(k) { REL = k; REL_FROM = 'вручную'; var row = $('relRow'); if (row) row.outerHTML = relRow(); }
+/* строки карточки «По паспорту»: подпись + поле (правится нажатием) */
+function kv(id, label, val, ph, type, col) { return '<div class="kv' + (col ? ' col' : '') + '"><span>' + label + '</span><input id="' + id + '"' + (type ? ' type="' + type + '"' : '') + ' value="' + esc(val || '') + '" placeholder="' + esc(ph || '') + '" autocomplete="off"></div>'; }
+function sumHtml(cls, title) {
+  var ap = D ? anketaPass(D) : { doc: '', issuer: '', date: '', valid: '' };
+  return '<div class="sum ' + (cls || '') + '" id="sum"><h4 id="sumTitle">' + title + '</h4>'
+    + kv('p_name', ADULT ? 'Сиздин аты-жөнүңүз / Ваше ФИО' : 'Аты-жөнү / ФИО', ADULT ? (D.parent || D.student) : D.parent, 'Асанова Айгуль Бакытовна', '', true)
+    + relRow()
+    + kv('p_doc', 'Сериясы, номери / Серия, номер', ap.doc, 'ID 1234567')
+    + kv('p_issuer', 'Ким берген / Кем выдан', ap.issuer, 'СӨМ 213011')
+    + kv('p_date', 'Берилген / Выдан', ap.date, '', 'date')
+    + kv('p_valid', 'Мөөнөтү / Действителен до', ap.valid, '', 'date')
+    + kv('p_addr', 'Дареги / Адрес', D.addr, 'Талас ш., Манас көч., 12', '', true)
+    + '<div id="passNote"></div><div class="mute" style="margin-top:6px">Катасы барбы? Сапты басып, оңдоңуз. / Строка неверна? Нажмите на неё и поправьте.</div></div>';
+}
 function render(d) {
-  var f = function(id2, label, val, ph) { return '<label>' + label + '</label><input id="' + id2 + '" value="' + esc(val || '') + '" placeholder="' + esc(ph || '') + '" autocomplete="off">'; };
   var head = '<h1>📄 Окуу келишими · ' + esc(d.student) + '</h1><div class="sub">' + esc(d.centre || '«Планета» билим берүү борбору') + ' · ' + esc(d.date || '') + '</div>'
     + (d.test ? '<div class="warn" id="testBar" style="margin:0 0 10px">🧪 Сынак — эч нерсе сакталбайт. / Тест — ничего не сохраняется.</div>' : '');
   if (d.done) {
@@ -165,57 +205,33 @@ function render(d) {
       + (d.when ? '<div class="stamp"><b>Окудум, макулмун / Прочитал(а), согласен(на).</b> Электрондук түрдө кабыл алынды: ' + esc(d.when) + (d.sign ? ' · кол тамга: «' + esc(d.sign) + '»' : '') + (d.stampPhone ? ' · WhatsApp ' + esc(d.stampPhone) : '') + (d.stampParent ? ' · ' + esc(d.stampParent) : '') + '.</div>' : '');
     return;
   }
-  D = d; ADULT = !!d.adult; ANKETA_REL = String(d.rel || '');
-  var relBtn = function(v, t) { return '<button type="button" data-v="' + v + '" onclick="relPick(this)"' + (v === ANKETA_REL ? ' class="on"' : '') + '>' + t + '</button>'; };
+  D = d; ADULT = !!d.adult; REL = ADULT ? '' : String(d.rel || ''); REL_FROM = REL ? 'анкета' : '';
+  var hasAnketa = !!(anketaPass(d).doc);
   $('w').innerHTML = head
-    + '<div class="box">' + (ADULT
-      ? '<b>1. Сиздин маалыматтарыңыз / Ваши данные</b><div class="mute">Сизге 18 жаш толгондуктан, келишим сиз менен түзүлөт. Кыргызча же орусча жазсаңыз болот. / Так как вам исполнилось 18, договор заключается с вами.</div>'
-        + f('p_name', 'СИЗДИН АТЫ-ЖӨНҮҢҮЗ / ВАШЕ ФИО', d.parent || d.student, 'Жумабеков Нурлан Азаматович')
-      : '<b>1. Ким толтуруп жатат? / Кто заполняет</b><div class="sw" id="p_rel" style="margin-top:8px">' + relBtn('мама', 'Апасы / Мама') + relBtn('папа', 'Атасы / Папа') + relBtn('представитель', 'Башка өкүл / Представитель') + '</div>'
-        + '<div class="note2">Келишим ушул адам менен түзүлөт. Анкетадагы маалымат башка адамдыкы болсо — талаалар тазаланат, өзүңүздүкүн жазыңыз. / Договор заключается с этим человеком. Если в анкете были данные другого родителя — поля очистятся, впишите свои.</div><div id="relNote"></div>'
-        + f('p_name', 'АТА-ЭНЕНИН АТЫ-ЖӨНҮ / ФИО РОДИТЕЛЯ', d.parent, 'Асанова Айгуль Бакытовна'))
-    + '<div id="nameHint"></div><div id="cam"></div>'
-    + '<label>ПАСПОРТ — СЕРИЯСЫ / СЕРИЯ</label><div class="sw" id="p_ser"><button type="button" onclick="pick(this)">ID</button><button type="button" onclick="pick(this)">AN</button><button type="button" onclick="pick(this)">AC</button><button type="button" onclick="pick(this)">Башка / Другая</button></div>'
-    + '<div class="two"><div><label>НОМЕРИ / НОМЕР (только цифры)</label><input id="p_num" placeholder="1234567" inputmode="numeric" autocomplete="off" oninput="this.value=this.value.replace(/[^0-9A-Za-z]/g,\'\').toUpperCase()"></div><div id="p_ser_other_box" class="hidden"><label>СЕРИЯ</label><input id="p_ser_other" placeholder="AB" autocomplete="off" oninput="this.value=this.value.toUpperCase()"></div></div>'
-    + '<label>КИМ БЕРГЕН / КЕМ ВЫДАН</label><div class="sw" id="p_iss"><button type="button" onclick="pick(this)">МКК</button><button type="button" onclick="pick(this)">СӨМ</button><button type="button" onclick="pick(this)">Башка / Другой</button></div><input id="p_code" style="margin-top:6px" placeholder="код, например 213011" autocomplete="off" oninput="this.value=this.value.toUpperCase()">'
-    + '<div class="two"><div><label>КАЧАН БЕРИЛГЕН / КОГДА ВЫДАН</label><input id="p_date" type="date"></div><div><label>ЖАРАКТУУ МӨӨНӨТҮ / ДЕЙСТВИТЕЛЕН ДО</label><input id="p_valid" type="date"></div></div>'
-    + '<div id="passNote"></div>'
-    + f('p_addr', 'ДАРЕГИ / АДРЕС', d.addr, 'Талас ш., Манас көч., 12') + '<div class="pre" id="pre" style="display:none">✓ Паспорттун маалыматтары анкетадан алынды — текшерип чыгыңыз. / Данные паспорта подставлены из анкеты — проверьте.</div></div>'
+    + '<div class="box"><b>1. ' + (ADULT ? 'Сиздин паспортуңуз / Ваш паспорт' : 'Паспорт / ID-карта') + '</b><div class="mute">' + (ADULT ? 'Сизге 18 жаш толгондуктан, келишим сиз менен түзүлөт. ' : '') + 'Эки тарабын тартыңыз — маалыматтар өзү толот. Сүрөт сакталбайт. / Снимите обе стороны — данные заполнятся сами. Фото не сохраняется.</div>'
+    + '<div class="tiles">' + tileHtml('A') + tileHtml('B') + '</div>'
+    + '<input type="file" id="camA" accept="image/*" class="vh" onchange="camGot(\'A\', this.files && this.files[0])"><input type="file" id="camB" accept="image/*" class="vh" onchange="camGot(\'B\', this.files && this.files[0])">'
+    + '<div class="mute" style="margin-top:8px">Түндүктөн: 1-экрандын скрини → 1, 2-экрандын → 2. / Из Тундук: скрин первого экрана → 1, второго → 2.</div>'
+    + '<button type="button" class="big" id="readBtn" onclick="camRead()" disabled>Маалыматтарды окуу / Считать данные</button>'
+    + '<div id="camState"></div>'
+    + '<div id="sumWrap">' + (hasAnketa ? sumHtml('', '✓ Анкетадан / Из анкеты — текшериңиз / проверьте') : '') + '</div>'
+    + '<div style="text-align:center;margin-top:10px" id="manualWrap">' + (hasAnketa ? '' : '<button type="button" class="lnk" onclick="manualOn()">Колуңуз менен жазуу / Заполнить вручную</button>') + '</div>'
+    + '</div>'
     + '<b>2. Келишимдин тексти</b><div class="doc ctdoc">' + docHtml(d.text, d.marks) + '</div>'
     + '<div class="box sig"><b>3. Кол тамга / Подпись</b><div class="mute">Кол тамганын ордуна өз колуңуз менен жазыңыз — мисалы «Макулмун» же атыңызды. / Вместо подписи напишите своей рукой — например «Макулмун» или своё имя.</div>'
     + '<label>КОЛ ТАМГА / ПОДПИСЬ</label><input id="p_sign" placeholder="Макулмун" autocomplete="off" maxlength="60"><div class="mute" style="margin-top:6px">Жазганыңыз келишимге кол тамга катары жазылат — дата, убакыт жана WhatsApp номери менен бирге.</div></div>'
     + '<div class="err" id="err"></div><button class="btn" id="b" onclick="go()">Окудум, макулмун ✓</button><div class="mute" style="margin-top:8px;text-align:center">Прочитал(а), согласен(на). Баскычты басканда келишим кабыл алынды деп эсептелет: дата, убакыт жана номер журналга жазылат.</div>';
-  prefill(d); camReset(); passCheck();
-  var pv = $('p_valid'); if (pv) pv.addEventListener('change', function() { passCheck(); });
+  if (hasAnketa) passCheck();
 }
-function pick(b) { var box = b.parentNode; box.querySelectorAll('button').forEach(function(x) { x.classList.toggle('on', x === b); }); if (box.id === 'p_ser') $('p_ser_other_box').classList.toggle('hidden', !/Башка/.test(b.textContent)); if (box.id === 'p_iss') $('p_code').placeholder = /МКК|СӨМ/.test(b.textContent) ? 'код, например 213011' : 'название органа / органдын аталышы'; }
-function sel(id) { var b = document.querySelector('#' + id + ' button.on'); return b ? b.textContent.trim() : ''; }
-function d2(v) { return v ? String(v).split('-').reverse().join('.') : ''; }
-function go() {
-  var ser = /Башка/.test(sel('p_ser')) ? $('p_ser_other').value.trim().toUpperCase() : sel('p_ser'), num = $('p_num').value.trim(), issSel = sel('p_iss'), code = $('p_code').value.trim().toUpperCase();
-  var pass = (ser + ' ' + num).trim(), iss = ((/МКК/.test(issSel) ? 'МКК ' : /СӨМ/.test(issSel) ? 'СӨМ ' : '') + code).trim() + (d2($('p_date').value) ? ', ' + d2($('p_date').value) : '');
-  var d = { name: $('p_name').value.trim(), pass: pass, iss: iss, val: d2($('p_valid').value), addr: $('p_addr').value.trim(), sign: $('p_sign').value.trim().replace(/\s+/g, ' ') }, e = $('err'); e.style.display = 'none';
-  if (d.name.length < 5) { e.textContent = ADULT ? 'Аты-жөнүңүздү жазыңыз / Напишите ваше ФИО.' : 'Ата-эненин аты-жөнүн жазыңыз / Напишите ФИО родителя.'; e.style.display = 'block'; return; }
-  if (!ADULT && !sel('p_rel')) { e.textContent = 'Ким толтуруп жатканын тандаңыз — апасы, атасы же өкүлү / Выберите, кто заполняет — мама, папа или представитель.'; e.style.display = 'block'; return; }
-  if (!ser || !num) { e.textContent = 'Паспорттун сериясын тандап, номерин жазыңыз / Выберите серию и напишите номер.'; e.style.display = 'block'; return; }
-  if (d.sign.replace(/[^A-Za-zА-Яа-яЁёҢңӨөҮү]/g, '').length < 3) { e.textContent = 'Кол тамганын ордуна сөз жазыңыз — мисалы «Макулмун» же атыңызды. / Напишите подпись словом — например «Макулмун» или своё имя.'; e.style.display = 'block'; $('p_sign').focus(); return; }
-  var b = $('b'); b.disabled = true; b.textContent = 'Сакталууда…';
-  api({ op: 'accept', id: ID, t: T, name: d.name, pass: d.pass, iss: d.iss, val: d.val, addr: d.addr, sign: d.sign, rel: ADULT ? '' : relVal() }).then(function(r) {
-    if (!r || !r.ok) { b.disabled = false; b.textContent = 'Окудум, макулмун ✓'; e.textContent = (r && r.error) || 'Сакталган жок, кайра басыңыз.'; e.style.display = 'block'; return; }
-    if (TEST && r.test) { $('w').innerHTML = '<h1>✓ Сынак өттү / Тест пройден</h1><div class="ok">Баары иштейт. Эч нерсе сакталган жок. / Всё работает, ничего не сохранено.</div><div class="mute" style="margin-top:10px">Шилтемени кайра ачып, дагы текшерсе болот. / Ссылку можно открыть снова и проверить ещё раз.</div>'; window.scrollTo(0, 0); return; }
-    $('w').innerHTML = '<h1>✓ Рахмат!</h1><div class="ok">Келишим кабыл алынды · ' + esc(r.when || '') + '</div><div class="mute" style="margin-top:10px">Договор принят. Келишимдин көчүрмөсү борбордо сакталат; ошол эле шилтеме аркылуу аны каалаган убакта окуй аласыз.</div><div class="load" id="load2">Кол коюлган келишим жүктөлүүдө… <div class="bar"><i></i></div></div>';
-    window.scrollTo(0, 0);
-    api({ id: ID, t: T }).then(function(d2x) { var l2 = $('load2'); if (!l2) return; if (d2x && d2x.ok && d2x.text) { l2.outerHTML = '<div class="doc full ctdoc" style="margin-top:12px">' + docHtml(d2x.text, d2x.marks) + '</div>'; } else l2.remove(); }).catch(function() { var l2 = $('load2'); if (l2) l2.remove(); });
-  }).catch(function() { b.disabled = false; b.textContent = 'Окудум, макулмун ✓'; e.textContent = 'Байланыш үзүлдү, кайра басыңыз / Связь прервалась, нажмите ещё раз.'; e.style.display = 'block'; });
+/* v6: плитки двух сторон */
+var SIDES = { A: null, B: null };   /* сжатые снимки (dataURL) — только в памяти страницы */
+var SIDE_T = { A: ['1. Алдыңкы бети', 'Лицевая сторона · с фото', '✓ Алдыңкы бети'], B: ['2. Арткы бети', 'Обратная сторона', '✓ Арткы бети'] };
+function tileHtml(k) {
+  var t = SIDE_T[k], has = !!SIDES[k];
+  return '<div class="tile' + (has ? ' done' : '') + '" id="tile' + k + '" onclick="camPick(\'' + k + '\')"' + (has ? ' style="background-image:url(' + SIDES[k] + ')"' : '') + '><div class="lab">' + (has ? t[2] + '<small>снято · кайра тартуу / переснять</small>' : '📷<br>' + t[0] + '<small>' + t[1] + '</small>') + '</div></div>';
 }
-/* v3: паспорт по фото. Снимок сжимается здесь, на телефоне, и уходит в журнал одним запросом; журнал распознаёт текст и возвращает только данные
-   полей — сам снимок никуда не сохраняется (так и написано родителю). При любой ошибке поля остаются для ручного ввода. */
-/* кнопка — это подпись к полю выбора файла (label): так камера/галерея открываются на iPhone надёжно, без имитации нажатия из скрипта */
-var CAM_INPUT = '<input type="file" id="camfile" accept="image/*" multiple class="vh" onchange="camGot(this.files)">';
-var CAM_BTN = '<label class="cam" id="camBtn" for="camfile">📷 <span>Паспорт: сүрөт же Түндүк скрини / Паспорт: фото или скрин из Тундук<small>ID-картанын арт жагын жакындан, экранга толтуруп тартыңыз же «Түндүк» тиркемесинен эки тараптын скринин тандаңыз — маалыматтар өзү толот. Сүрөт сакталбайт. / Снимите обратную сторону карты крупно, на весь экран, или выберите скрины обеих сторон из приложения «Тундук» — поля заполнятся сами. Фото не сохраняется.</small></span></label>' + CAM_INPUT;
-var CAM_FAIL = 'Окуй алган жокпуз — картаны жакындан, экранга толтуруп кайра тартыңыз же колуңуз менен жазыңыз. / Не удалось прочитать — снимите карту ближе, на весь экран, или впишите вручную.';
-function camReset() { var c = $('cam'); if (c) c.innerHTML = CAM_BTN; }
-function camPick() { var f = $('camfile'); if (f) { f.value = ''; f.click(); } }
+function tileRefresh() { ['A', 'B'].forEach(function(k) { var el = $('tile' + k); if (el) el.outerHTML = tileHtml(k); }); var rb = $('readBtn'); if (rb) rb.disabled = !(SIDES.A || SIDES.B); }
+function camPick(k) { var f = $('cam' + k); if (f) { f.value = ''; f.click(); } }
 function camShrink(file) {
   return new Promise(function(res, rej) {
     var url = URL.createObjectURL(file), im = new Image();
@@ -224,57 +240,78 @@ function camShrink(file) {
     im.src = url;
   });
 }
-function camGot(files) {
-  var list = Array.prototype.slice.call(files || []).slice(0, 2); if (!list.length) return;   /* не больше двух картинок: обе стороны карты или скрины Түндүк */
-  $('cam').innerHTML = '<div class="busy" id="camBusy">⏳ Паспортту окуп жатабыз… / Распознаём паспорт…' + (list.length > 1 ? ' (' + list.length + ')' : '') + '<div class="bar"><i></i></div></div>';
-  Promise.all(list.map(camShrink)).then(function(imgs) { return apiPost({ op: 'ocr', id: ID, t: T, imgs: imgs }); }).then(function(r) {
+function camGot(k, file) {
+  if (!file) return;
+  $('camState').innerHTML = '<div class="busy">⏳ Сүрөт даярдалууда… / Готовим снимок…<div class="bar"><i></i></div></div>';
+  camShrink(file).then(function(img) { SIDES[k] = img; tileRefresh(); $('camState').innerHTML = ''; if (SIDES.A && SIDES.B) camRead(); else $('camState').innerHTML = '<div class="mute" style="margin-top:8px">' + (k === 'A' ? 'Эми арткы бетин тартыңыз — же «Маалыматтарды окуу». / Теперь обратную сторону — или «Считать данные».' : 'Эми алдыңкы бетин тартыңыз — же «Маалыматтарды окуу». / Теперь лицевую сторону — или «Считать данные».') + '</div>'; })
+    .catch(function() { $('camState').innerHTML = '<div class="warn">Сүрөт ачылган жок — кайра тартыңыз. / Снимок не открылся — снимите ещё раз.</div>'; });
+}
+var CAM_FAIL = 'Окуй алган жокпуз — картаны жакындан, экранга толтуруп кайра тартыңыз же колуңуз менен жазыңыз. / Не удалось прочитать — снимите карту ближе, на весь экран, или впишите вручную.';
+var VERIFIED = false;
+function camRead() {
+  var imgs = [SIDES.A, SIDES.B].filter(Boolean); if (!imgs.length) return;
+  var rb = $('readBtn'); rb.disabled = true;
+  $('camState').innerHTML = '<div class="busy" id="camBusy">⏳ Паспортту окуп жатабыз… / Считываем данные (' + imgs.length + ')…<div class="bar"><i></i></div></div>';
+  apiPost({ op: 'ocr', id: ID, t: T, imgs: imgs }).then(function(r) {
+    rb.disabled = false;
     var dg = TEST && r && r.diag ? '<div class="mute" style="margin-top:4px">🧪 Тест: символов ' + r.diag.chars + ', строк ' + r.diag.lines + ', картинок ' + r.diag.imgs + ' (' + r.diag.kb + ' КБ), проходов ' + r.diag.passes + ', ' + Math.round(r.diag.ms / 1000) + ' с</div>' : '';
     if (!r || !r.ok) { camFail((r && r.error) || CAM_FAIL, dg); return; }
     var k = camFill(r.found || {});
     if (!k) { camFail(CAM_FAIL, dg); return; }
-    VERIFIED = !!(r.found && r.found.verified && r.found.verified.num && r.found.verified.val); passCheck();
     var ru = k === 1 ? 'поле' : k < 5 ? 'поля' : 'полей';
-    $('cam').innerHTML = '<div class="done" id="camDone">✓ Сүрөттөн ' + k + ' маалымат окулду — текшерип чыгыңыз. / Из снимка прочитано ' + k + ' ' + ru + ' — проверьте.<div class="mute" style="margin-top:4px">Сүрөт сакталган жок. / Фото не сохранено. · <label for="camfile">📷 Дагы кошуу / Добавить ещё</label></div>' + dg + '</div>' + CAM_INPUT;
-    var pre = $('pre'); if (pre) pre.style.display = 'none';
-  }).catch(function() { camFail('Байланыш үзүлдү — кайра аракет кылыңыз же колуңуз менен жазыңыз. / Связь прервалась — попробуйте ещё раз или впишите вручную.'); });
+    $('camState').innerHTML = '<div class="done" id="camDone">✓ Сүрөттөн ' + k + ' маалымат окулду. / Из снимков прочитано ' + k + ' ' + ru + '.<div class="mute" style="margin-top:4px">Сүрөттөр сакталган жок. / Фото не сохранены.</div>' + dg + '</div>';
+  }).catch(function() { rb.disabled = false; camFail('Байланыш үзүлдү — кайра аракет кылыңыз же колуңуз менен жазыңыз. / Связь прервалась — попробуйте ещё раз или впишите вручную.'); });
 }
-function camFail(msg, dg) { $('cam').innerHTML = '<div class="warn" id="camWarn">' + esc(msg) + (dg || '') + '</div>' + CAM_BTN; }
-/* v5: кто заполняет. Выбрали другого человека, чем в анкете — ФИО и паспорт очищаются (адрес — семейный, остаётся); вернулись к анкетному — данные из анкеты возвращаются */
-function relVal() { var b = document.querySelector('#p_rel button.on'); return b ? b.dataset.v : ''; }
-function relPick(b) {
-  var box = $('p_rel'); box.querySelectorAll('button').forEach(function(x) { x.classList.toggle('on', x === b); });
-  var v = b.dataset.v, same = !ANKETA_REL || v === ANKETA_REL, note = $('relNote');
-  ['p_num', 'p_code', 'p_date', 'p_valid', 'p_ser_other'].forEach(function(id) { var el = $(id); if (el) { el.value = ''; el.classList.remove('rec'); } });
-  ['p_ser', 'p_iss'].forEach(function(id) { document.querySelectorAll('#' + id + ' button').forEach(function(x) { x.classList.remove('on'); x.classList.remove('rec'); }); });
-  $('p_ser_other_box').classList.add('hidden'); $('nameHint').innerHTML = ''; $('passNote').innerHTML = '';
-  if (same) { $('p_name').value = D.parent || ''; prefill(D); if (note) note.innerHTML = ''; }
-  else { $('p_name').value = ''; $('p_name').classList.remove('rec'); var pre = $('pre'); if (pre) pre.style.display = 'none'; if (note) note.innerHTML = '<div class="note2" style="color:#9a3412">Талаалар тазаланды — өзүңүздүн аты-жөнүңүздү жана паспортуңузду жазыңыз (же сүрөткө тартыңыз). / Поля очищены — впишите свои ФИО и паспорт (или сфотографируйте).</div>'; $('p_name').focus(); }
-}
-/* v5: срок паспорта истёк — предупреждение (не блокирует); данные сошлись по контрольным цифрам машиночитаемой строки — отметка */
-var VERIFIED = false;
-function passCheck() {
-  var box = $('passNote'); if (!box) return; var out = '';
-  var v = $('p_valid') ? $('p_valid').value : '';
-  if (v && v < new Date().toISOString().slice(0, 10)) out += '<div class="warn" style="margin-top:8px">⚠ Паспорттун мөөнөтү өткөн (' + esc(d2(v)) + '). Жарактуу документти көрсөтүңүз. / Срок паспорта истёк — укажите действующий документ.</div>';
-  else if (VERIFIED) out += '<div class="done" style="margin-top:8px">✓ Паспорттун маалыматтары машиналык саптан ырасталды. / Данные паспорта подтверждены по машиночитаемой строке.</div>';
-  box.innerHTML = out;
-}
-function camBtn(boxId, text) { return Array.prototype.filter.call(document.querySelectorAll('#' + boxId + ' button'), function(x) { return x.textContent.trim() === text; })[0]; }
-function camIso(v) { var m = String(v || '').match(/^(\d{2})\.(\d{2})\.(\d{4})$/); return m ? m[3] + '-' + m[2] + '-' + m[1] : ''; }
-/* поля из снимка → форма; заполненное подсвечивается зелёным, пока родитель его не поправит. Возвращает, сколько полей заполнено */
+function camFail(msg, dg) { $('camState').innerHTML = '<div class="warn" id="camWarn">' + esc(msg) + (dg || '') + '</div>'; if (!$('sum')) $('manualWrap').innerHTML = '<button type="button" class="lnk" onclick="manualOn()">Колуңуз менен жазуу / Заполнить вручную</button>'; }
+function manualOn() { if (!$('sum')) $('sumWrap').innerHTML = sumHtml('manual', 'Паспорт боюнча / По паспорту — жазыңыз / впишите'); $('manualWrap').innerHTML = ''; $('p_doc').focus(); }
+/* поля из снимков → карточка «По паспорту»: прочитанное — зелёным, недостающее — оранжевым с подсказкой, какую сторону снять. Возвращает число заполненных полей */
 function camFill(f) {
-  var k = 0, mark = function(el) { if (el) el.classList.add('rec'); };
-  if (f.ser && f.num) { var known = ['ID', 'AN', 'AC'].indexOf(f.ser) >= 0, b = known ? camBtn('p_ser', f.ser) : document.querySelector('#p_ser button:last-child'); if (b) { pick(b); mark(b); } if (!known) { $('p_ser_other').value = f.ser; mark($('p_ser_other')); } $('p_num').value = f.num; mark($('p_num')); k++; }
-  if (f.code) { var bi = f.how === 'МКК' || f.how === 'СӨМ' ? camBtn('p_iss', f.how) : document.querySelector('#p_iss button:last-child'); if (bi) { pick(bi); mark(bi); } $('p_code').value = String(f.code).replace(/^(МКК|СӨМ)\s*/i, ''); mark($('p_code')); k++; }
-  if (camIso(f.iss)) { $('p_date').value = camIso(f.iss); mark($('p_date')); k++; }
-  if (camIso(f.val)) { $('p_valid').value = camIso(f.val); mark($('p_valid')); k++; }
-  if (f.addr) { $('p_addr').value = f.addr; mark($('p_addr')); k++; }   /* адрес прописки из Түндүк */
-  var nm = $('p_name'), cur = nm.value.trim();
-  if (f.name) { if (!cur) { nm.value = f.name; mark(nm); k++; } else if (cur.replace(/\s+/g, ' ').toLowerCase() !== f.name.toLowerCase()) { $('nameHint').innerHTML = '<div class="hint" id="nameHintBox">Документте: <b>' + esc(f.name) + '</b> — <a href="#" id="nameUse">Колдонуу / Использовать</a></div>'; $('nameUse').onclick = function() { nm.value = f.name; mark(nm); $('nameHint').innerHTML = ''; return false; }; } }
-  else if (f.nameLat && !cur) nm.placeholder = f.nameLat;   /* только подсказка: ФИО в договор — кириллицей, своей рукой */
+  if (!(f.name || (f.ser && f.num) || f.code || f.iss || f.val || f.addr)) return 0;   /* ничего не прочитано — карточку не трогаем */
+  if (!$('sum')) $('sumWrap').innerHTML = sumHtml('', '✓ Паспорт боюнча / По паспорту — текшериңиз / проверьте');
+  $('manualWrap').innerHTML = ''; $('sum').classList.remove('manual'); $('sumTitle').textContent = '✓ Паспорт боюнча / По паспорту — текшериңиз / проверьте';
+  var k = 0, set = function(id, v) { var el = $(id); if (!el) return; el.classList.remove('need'); if (v) { el.value = v; el.classList.add('rec'); k++; } else if (!el.value) el.classList.add('need'); };
+  if (f.name) { set('p_name', f.name); } else if (!ADULT && f.rel && REL_FROM === 'анкета' && f.rel !== REL) { var nm = $('p_name'); nm.value = ''; nm.classList.add('need'); }   /* паспорт другого родителя — анкетное ФИО не подходит */
+  set('p_doc', f.ser && f.num ? f.ser + ' ' + f.num : '');
+  set('p_issuer', f.code ? ((f.how === 'МКК' || f.how === 'СӨМ') ? f.how + ' ' : '') + f.code : '');
+  set('p_date', iso(f.iss)); set('p_valid', iso(f.val));
+  if (f.addr) set('p_addr', f.addr);
+  if (!ADULT && f.rel) { REL = f.rel; REL_FROM = 'паспорт'; var row = $('relRow'); if (row) row.outerHTML = relRow(); }
+  VERIFIED = !!(f.verified && f.verified.num && f.verified.val);
+  var miss = [];
+  if (!SIDES.A && (!$('p_name').value || !$('p_valid').value)) miss.push('Алдыңкы бетин тартыңыз — анда аты-жөнү жана мөөнөтү. / Снимите лицевую сторону — там ФИО и срок действия.');
+  if (!SIDES.B && (!$('p_doc').value || !$('p_issuer').value)) miss.push('Арткы бетин тартыңыз — анда номери жана ким бергени. / Снимите обратную сторону — там номер и кем выдан.');
+  passCheck(miss);
+  ['A', 'B'].forEach(function(s) { var t = $('tile' + s); if (t && !SIDES[s]) t.classList.toggle('need', miss.length > 0); });
   return k;
 }
-document.addEventListener('input', function(e) { if (e.target && e.target.classList) e.target.classList.remove('rec'); });
+/* срок истёк — предупреждение (не блокирует); контрольные цифры машиночитаемой строки сошлись — отметка; чего не хватает — подсказка */
+function passCheck(miss) {
+  var box = $('passNote'); if (!box) return; var out = '';
+  var v = $('p_valid') ? $('p_valid').value : '';
+  if (v && v < new Date().toISOString().slice(0, 10)) out += '<div class="warn">⚠ Паспорттун мөөнөтү өткөн (' + esc(d2(v)) + '). Жарактуу документти көрсөтүңүз. / Срок паспорта истёк — укажите действующий документ.</div>';
+  else if (VERIFIED) out += '<div class="done" style="margin-top:8px">✓ Номер жана мөөнөт машиналык саптан ырасталды. / Номер и срок подтверждены по машиночитаемой строке.</div>';
+  (miss || []).forEach(function(m) { out += '<div class="warn">' + esc(m) + '</div>'; });
+  box.innerHTML = out;
+}
+document.addEventListener('input', function(e) { if (e.target && e.target.classList) { e.target.classList.remove('rec'); e.target.classList.remove('need'); } });
+document.addEventListener('change', function(e) { if (e.target && e.target.id === 'p_valid') passCheck(); });
+function go() {
+  var e = $('err'); e.style.display = 'none';
+  if (!$('sum')) { e.textContent = 'Паспортту сүрөткө тартыңыз же «Колуңуз менен жазуу» дегенди басыңыз. / Сфотографируйте паспорт или нажмите «Заполнить вручную».'; e.style.display = 'block'; return; }
+  var doc = $('p_doc').value.trim().replace(/\s+/g, ' ').toUpperCase(), issuer = $('p_issuer').value.trim().replace(/\s+/g, ' ');
+  var d = { name: $('p_name').value.trim().replace(/\s+/g, ' '), pass: doc, iss: issuer + (d2($('p_date').value) ? (issuer ? ', ' : '') + d2($('p_date').value) : ''), val: d2($('p_valid').value), addr: $('p_addr').value.trim(), sign: $('p_sign').value.trim().replace(/\s+/g, ' '), rel: ADULT ? '' : REL };
+  if (d.name.length < 5) { e.textContent = ADULT ? 'Аты-жөнүңүздү жазыңыз / Напишите ваше ФИО.' : 'Ата-эненин аты-жөнүн жазыңыз / Напишите ФИО родителя.'; e.style.display = 'block'; $('p_name').focus(); return; }
+  if (!/\d{5}/.test(doc)) { e.textContent = 'Паспорттун сериясын жана номерин жазыңыз (мисалы ID 1234567) же сүрөткө тартыңыз. / Укажите серию и номер паспорта (например ID 1234567) или сфотографируйте.'; e.style.display = 'block'; $('p_doc').focus(); return; }
+  if (d.sign.replace(/[^A-Za-zА-Яа-яЁёҢңӨөҮү]/g, '').length < 3) { e.textContent = 'Кол тамганын ордуна сөз жазыңыз — мисалы «Макулмун» же атыңызды. / Напишите подпись словом — например «Макулмун» или своё имя.'; e.style.display = 'block'; $('p_sign').focus(); return; }
+  var b = $('b'); b.disabled = true; b.textContent = 'Сакталууда…';
+  api({ op: 'accept', id: ID, t: T, name: d.name, pass: d.pass, iss: d.iss, val: d.val, addr: d.addr, sign: d.sign, rel: d.rel }).then(function(r) {
+    if (!r || !r.ok) { b.disabled = false; b.textContent = 'Окудум, макулмун ✓'; e.textContent = (r && r.error) || 'Сакталган жок, кайра басыңыз.'; e.style.display = 'block'; return; }
+    if (TEST && r.test) { $('w').innerHTML = '<h1>✓ Сынак өттү / Тест пройден</h1><div class="ok">Баары иштейт. Эч нерсе сакталган жок. / Всё работает, ничего не сохранено.</div><div class="mute" style="margin-top:10px">Шилтемени кайра ачып, дагы текшерсе болот. / Ссылку можно открыть снова и проверить ещё раз.</div>'; window.scrollTo(0, 0); return; }
+    $('w').innerHTML = '<h1>✓ Рахмат!</h1><div class="ok">Келишим кабыл алынды · ' + esc(r.when || '') + '</div><div class="mute" style="margin-top:10px">Договор принят. Келишимдин көчүрмөсү борбордо сакталат; ошол эле шилтеме аркылуу аны каалаган убакта окуй аласыз.</div><div class="load" id="load2">Кол коюлган келишим жүктөлүүдө… <div class="bar"><i></i></div></div>';
+    window.scrollTo(0, 0);
+    api({ id: ID, t: T }).then(function(d2x) { var l2 = $('load2'); if (!l2) return; if (d2x && d2x.ok && d2x.text) { l2.outerHTML = '<div class="doc full ctdoc" style="margin-top:12px">' + docHtml(d2x.text, d2x.marks) + '</div>'; } else l2.remove(); }).catch(function() { var l2 = $('load2'); if (l2) l2.remove(); });
+  }).catch(function() { b.disabled = false; b.textContent = 'Окудум, макулмун ✓'; e.textContent = 'Байланыш үзүлдү, кайра басыңыз / Связь прервалась, нажмите ещё раз.'; e.style.display = 'block'; });
+}
 function load() {
   if (!ID || !T) { showFail('Шилтеме толук эмес. Борбордон келишимди кайра жөнөтүүнү сураныңыз. / Ссылка неполная — попросите центр отправить договор заново.', false); return; }
   $('w').innerHTML = '<div class="load" id="load">📄 Келишим жүктөлүүдө… / Загружаем договор…<div class="bar"><i></i></div></div>';
