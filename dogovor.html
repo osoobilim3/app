@@ -200,31 +200,32 @@ function go() {
    полей — сам снимок никуда не сохраняется (так и написано родителю). При любой ошибке поля остаются для ручного ввода. */
 /* кнопка — это подпись к полю выбора файла (label): так камера/галерея открываются на iPhone надёжно, без имитации нажатия из скрипта */
 var CAM_INPUT = '<input type="file" id="camfile" accept="image/*" multiple class="vh" onchange="camGot(this.files)">';
-var CAM_BTN = '<label class="cam" id="camBtn" for="camfile">📷 <span>Паспорт: сүрөт же Түндүк скрини / Паспорт: фото или скрин из Тундук<small>ID-картанын арт жагын тартыңыз же «Түндүк» тиркемесинен эки тараптын скринин тандаңыз — маалыматтар өзү толот. Сүрөт сакталбайт. / Снимите обратную сторону карты или выберите скрины обеих сторон из приложения «Тундук» — поля заполнятся сами. Фото не сохраняется.</small></span></label>' + CAM_INPUT;
-var CAM_FAIL = 'Окуй алган жокпуз — сүрөттү кайра тартыңыз же колуңуз менен жазыңыз. / Не удалось прочитать — снимите ещё раз или впишите вручную.';
+var CAM_BTN = '<label class="cam" id="camBtn" for="camfile">📷 <span>Паспорт: сүрөт же Түндүк скрини / Паспорт: фото или скрин из Тундук<small>ID-картанын арт жагын жакындан, экранга толтуруп тартыңыз же «Түндүк» тиркемесинен эки тараптын скринин тандаңыз — маалыматтар өзү толот. Сүрөт сакталбайт. / Снимите обратную сторону карты крупно, на весь экран, или выберите скрины обеих сторон из приложения «Тундук» — поля заполнятся сами. Фото не сохраняется.</small></span></label>' + CAM_INPUT;
+var CAM_FAIL = 'Окуй алган жокпуз — картаны жакындан, экранга толтуруп кайра тартыңыз же колуңуз менен жазыңыз. / Не удалось прочитать — снимите карту ближе, на весь экран, или впишите вручную.';
 function camReset() { var c = $('cam'); if (c) c.innerHTML = CAM_BTN; }
 function camPick() { var f = $('camfile'); if (f) { f.value = ''; f.click(); } }
 function camShrink(file) {
   return new Promise(function(res, rej) {
     var url = URL.createObjectURL(file), im = new Image();
-    im.onload = function() { try { var w = im.naturalWidth || im.width, h = im.naturalHeight || im.height, k = Math.min(1, 1800 / Math.max(w, h, 1)); var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k)); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', 0.82)); } catch (e) { rej(e); } };
+    im.onload = function() { try { var w = im.naturalWidth || im.width, h = im.naturalHeight || im.height, k = Math.min(1, 2400 / Math.max(w, h, 1)); var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k)); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', 0.85)); } catch (e) { rej(e); } };
     im.onerror = function() { URL.revokeObjectURL(url); rej(new Error('img')); };
     im.src = url;
   });
 }
 function camGot(files) {
-  var list = Array.prototype.slice.call(files || []).slice(0, 3); if (!list.length) return;   /* до трёх картинок: обе стороны карты или скрины Түндүк */
+  var list = Array.prototype.slice.call(files || []).slice(0, 2); if (!list.length) return;   /* не больше двух картинок: обе стороны карты или скрины Түндүк */
   $('cam').innerHTML = '<div class="busy" id="camBusy">⏳ Паспортту окуп жатабыз… / Распознаём паспорт…' + (list.length > 1 ? ' (' + list.length + ')' : '') + '<div class="bar"><i></i></div></div>';
   Promise.all(list.map(camShrink)).then(function(imgs) { return apiPost({ op: 'ocr', id: ID, t: T, imgs: imgs }); }).then(function(r) {
-    if (!r || !r.ok) { camFail((r && r.error) || CAM_FAIL); return; }
+    var dg = TEST && r && r.diag ? '<div class="mute" style="margin-top:4px">🧪 Тест: символов ' + r.diag.chars + ', строк ' + r.diag.lines + ', картинок ' + r.diag.imgs + ' (' + r.diag.kb + ' КБ), проходов ' + r.diag.passes + ', ' + Math.round(r.diag.ms / 1000) + ' с</div>' : '';
+    if (!r || !r.ok) { camFail((r && r.error) || CAM_FAIL, dg); return; }
     var k = camFill(r.found || {});
-    if (!k) { camFail(CAM_FAIL); return; }
+    if (!k) { camFail(CAM_FAIL, dg); return; }
     var ru = k === 1 ? 'поле' : k < 5 ? 'поля' : 'полей';
-    $('cam').innerHTML = '<div class="done" id="camDone">✓ Сүрөттөн ' + k + ' маалымат окулду — текшерип чыгыңыз. / Из снимка прочитано ' + k + ' ' + ru + ' — проверьте.<div class="mute" style="margin-top:4px">Сүрөт сакталган жок. / Фото не сохранено. · <label for="camfile">📷 Дагы кошуу / Добавить ещё</label></div></div>' + CAM_INPUT;
+    $('cam').innerHTML = '<div class="done" id="camDone">✓ Сүрөттөн ' + k + ' маалымат окулду — текшерип чыгыңыз. / Из снимка прочитано ' + k + ' ' + ru + ' — проверьте.<div class="mute" style="margin-top:4px">Сүрөт сакталган жок. / Фото не сохранено. · <label for="camfile">📷 Дагы кошуу / Добавить ещё</label></div>' + dg + '</div>' + CAM_INPUT;
     var pre = $('pre'); if (pre) pre.style.display = 'none';
   }).catch(function() { camFail('Байланыш үзүлдү — кайра аракет кылыңыз же колуңуз менен жазыңыз. / Связь прервалась — попробуйте ещё раз или впишите вручную.'); });
 }
-function camFail(msg) { $('cam').innerHTML = '<div class="warn" id="camWarn">' + esc(msg) + '</div>' + CAM_BTN; }
+function camFail(msg, dg) { $('cam').innerHTML = '<div class="warn" id="camWarn">' + esc(msg) + (dg || '') + '</div>' + CAM_BTN; }
 function camBtn(boxId, text) { return Array.prototype.filter.call(document.querySelectorAll('#' + boxId + ' button'), function(x) { return x.textContent.trim() === text; })[0]; }
 function camIso(v) { var m = String(v || '').match(/^(\d{2})\.(\d{2})\.(\d{4})$/); return m ? m[3] + '-' + m[2] + '-' + m[1] : ''; }
 /* поля из снимка → форма; заполненное подсвечивается зелёным, пока родитель его не поправит. Возвращает, сколько полей заполнено */
