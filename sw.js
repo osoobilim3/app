@@ -2,8 +2,10 @@
    Хранит только обложку приложения (значок и экран запуска), чтобы оно
    открывалось мгновенно. Данные журнала НИКОГДА не сохраняются на телефоне:
    журнал всегда загружается с сервера, как обычный сайт. */
-const CACHE = 'planeta-shell-v1';
-const SHELL = ['./index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/favicon-32.png'];
+const CACHE = 'planeta-shell-v2';
+const SHELL = ['./index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/favicon-32.png',
+  './kabinet.html', './kabinet.webmanifest', './icons/kabinet-192.png', './icons/kabinet-512.png',
+  './kassa.html', './kassa.webmanifest', './icons/kassa-192.png', './icons/kassa-512.png'];   /* три обложки: отметки, кабинет, касса */
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
