@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#173f67">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
 <style>
-/* Страница договора для родителей (v9, сборка 571: в сообщении об ошибке нет строки «можно ответить «Макул» в чат» — договор подписывается только на странице; v8, сборка 570: номер и код из ссылки берутся без приклеенного хвоста — ссылка, вставленная в WhatsApp дважды подряд или без пробела перед текстом, открывается; v7, сборка 565: текст договора на странице заполняется введённым сразу (бланк tpl с полями родителя); ФИО из анкеты
+/* Страница договора для родителей (v10, сборка 572: перед подписью — галочка «Келишимди окудум, макулмун»; кнопка активна только с галочкой и подписью, отметка о галочке уходит в журнал (agree=1); v9, сборка 571: в сообщении об ошибке нет строки «можно ответить «Макул» в чат» — договор подписывается только на странице; v8, сборка 570: номер и код из ссылки берутся без приклеенного хвоста — ссылка, вставленная в WhatsApp дважды подряд или без пробела перед текстом, открывается; v7, сборка 565: текст договора на странице заполняется введённым сразу (бланк tpl с полями родителя); ФИО из анкеты
    убирается, если пол по паспорту ему не соответствует; v6, сборка 564: паспорт по двум сторонам — две плитки «лицевая / обратная», данные считываются сами после второго снимка,
    карточка «По паспорту» с правкой строк, мама/папа по полу из паспорта, ручной ввод под ссылкой; убраны кнопки ID/AN/AC, МКК/СӨМ и вопрос «кто заполняет»;
    v5, сборка 563: «кто заполняет» (мама / папа / представитель) — договор с тем, кто подписал; ученик 18+ — свои данные,
@@ -28,6 +28,10 @@ input:focus{outline:none;border-color:#173f67}
 .doc.full{max-height:none}
 .box.sig{background:#eef6ff;border-color:#bfdbfe}
 #p_sign{font-family:"Segoe Script","Brush Script MT","Snell Roundhand",cursive;font-size:20px;color:#173f67}
+.agree{display:flex;align-items:flex-start;gap:12px;background:#fff;border:1.5px solid #bfdbfe;border-radius:12px;padding:12px;margin:10px 0 6px;cursor:pointer}
+.agree input{width:24px;height:24px;margin:1px 0 0;accent-color:#173f67;flex:none}
+.agree b{font-size:15px;display:block}.agree small{color:#64748b;font-size:12px;display:block;margin-top:2px}
+.agree.on{border-color:#173f67;background:#f0f6ff}
 .pre{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;border-radius:10px;padding:8px 10px;font-size:12.5px;margin:6px 0 2px}
 .sw{display:flex;gap:6px;flex-wrap:wrap}
 .sw button{flex:1;min-width:70px;border:1.5px solid #d9dee8;border-radius:10px;padding:11px 6px;font-size:15px;font-weight:700;background:#fff;color:#1b2333;cursor:pointer;font-family:inherit}
@@ -223,9 +227,11 @@ function render(d) {
     + '<div style="text-align:center;margin-top:10px" id="manualWrap">' + (hasAnketa ? '' : '<button type="button" class="lnk" onclick="manualOn()">Колуңуз менен жазуу / Заполнить вручную</button>') + '</div>'
     + '</div>'
     + '<b>2. Келишимдин тексти</b><div class="doc ctdoc" id="docBox">' + docHtml(d.text, d.marks) + '</div>'
-    + '<div class="box sig"><b>3. Кол тамга / Подпись</b><div class="mute">Кол тамганын ордуна өз колуңуз менен жазыңыз — мисалы «Макулмун» же атыңызды. / Вместо подписи напишите своей рукой — например «Макулмун» или своё имя.</div>'
-    + '<label>КОЛ ТАМГА / ПОДПИСЬ</label><input id="p_sign" placeholder="Макулмун" autocomplete="off" maxlength="60"><div class="mute" style="margin-top:6px">Жазганыңыз келишимге кол тамга катары жазылат — дата, убакыт жана WhatsApp номери менен бирге.</div></div>'
-    + '<div class="err" id="err"></div><button class="btn" id="b" onclick="go()">Окудум, макулмун ✓</button><div class="mute" style="margin-top:8px;text-align:center">Прочитал(а), согласен(на). Баскычты басканда келишим кабыл алынды деп эсептелет: дата, убакыт жана номер журналга жазылат.</div>';
+    + '<div class="box sig"><b>3. Кол тамга / Подпись</b>'
+    + '<label class="agree" id="agreeRow"><input type="checkbox" id="p_agree" onchange="agreeUpd()"><span><b>Келишимди окудум, макулмун</b><small>Прочитал(а) договор, согласен(на) с условиями</small></span></label>'
+    + '<div class="mute">Кол тамганын ордуна өз колуңуз менен жазыңыз — мисалы «Макулмун» же атыңызды. / Вместо подписи напишите своей рукой — например «Макулмун» или своё имя.</div>'
+    + '<label>КОЛ ТАМГА / ПОДПИСЬ</label><input id="p_sign" placeholder="Макулмун" autocomplete="off" maxlength="60" oninput="agreeUpd()"><div class="mute" style="margin-top:6px">Жазганыңыз келишимге кол тамга катары жазылат — дата, убакыт жана WhatsApp номери менен бирге.</div></div>'
+    + '<div class="err" id="err"></div><button class="btn" id="b" onclick="go()" disabled>Окудум, макулмун ✓</button><div class="mute" id="bHint" style="margin-top:8px;text-align:center">Адегенде жогорудагы белгини коюп, кол тамгаңызды жазыңыз. / Сначала поставьте галочку выше и напишите подпись.</div>';
   if (hasAnketa) passCheck();
   liveDoc();
 }
@@ -320,8 +326,19 @@ function passCheck(miss) {
 }
 document.addEventListener('input', function(e) { if (e.target && e.target.classList) { e.target.classList.remove('rec'); e.target.classList.remove('need'); } if (e.target && /^p_/.test(e.target.id || '')) liveSoon(); });
 document.addEventListener('change', function(e) { if (e.target && e.target.id === 'p_valid') passCheck(); if (e.target && /^p_/.test(e.target.id || '')) liveSoon(); });
+/* v10: галочка «Келишимди окудум, макулмун» + подпись словом → кнопка активна */
+function signOk() { var s = $('p_sign'); return !!s && s.value.trim().replace(/[^A-Za-zА-Яа-яЁёҢңӨөҮү]/g, '').length >= 3; }
+function agreeUpd() {
+  var a = $('p_agree'), b = $('b'), h = $('bHint'), row = $('agreeRow'); if (!a || !b) return;
+  var on = a.checked; if (row) row.className = 'agree' + (on ? ' on' : '');
+  var ready = on && signOk(); b.disabled = !ready;
+  if (h) h.textContent = ready ? 'Прочитал(а), согласен(на). Баскычты басканда келишим кабыл алынды деп эсептелет: дата, убакыт жана номер журналга жазылат.'
+    : !on ? 'Адегенде жогорудагы белгини коюп, кол тамгаңызды жазыңыз. / Сначала поставьте галочку выше и напишите подпись.'
+    : 'Эми кол тамгаңызды жазыңыз — мисалы «Макулмун». / Теперь напишите подпись — например «Макулмун».';
+}
 function go() {
   var e = $('err'); e.style.display = 'none';
+  if (!$('p_agree') || !$('p_agree').checked) { e.textContent = 'Адегенде «Келишимди окудум, макулмун» белгисин коюңуз. / Сначала поставьте галочку «Прочитал(а) договор, согласен(на)».'; e.style.display = 'block'; return; }
   if (!$('sum')) { e.textContent = 'Паспортту сүрөткө тартыңыз же «Колуңуз менен жазуу» дегенди басыңыз. / Сфотографируйте паспорт или нажмите «Заполнить вручную».'; e.style.display = 'block'; return; }
   var doc = $('p_doc').value.trim().replace(/\s+/g, ' ').toUpperCase(), issuer = $('p_issuer').value.trim().replace(/\s+/g, ' ');
   var d = { name: $('p_name').value.trim().replace(/\s+/g, ' '), pass: doc, iss: issuer + (d2($('p_date').value) ? (issuer ? ', ' : '') + d2($('p_date').value) : ''), val: d2($('p_valid').value), addr: $('p_addr').value.trim(), sign: $('p_sign').value.trim().replace(/\s+/g, ' '), rel: ADULT ? '' : REL };
@@ -329,13 +346,13 @@ function go() {
   if (!/\d{5}/.test(doc)) { e.textContent = 'Паспорттун сериясын жана номерин жазыңыз (мисалы ID 1234567) же сүрөткө тартыңыз. / Укажите серию и номер паспорта (например ID 1234567) или сфотографируйте.'; e.style.display = 'block'; $('p_doc').focus(); return; }
   if (d.sign.replace(/[^A-Za-zА-Яа-яЁёҢңӨөҮү]/g, '').length < 3) { e.textContent = 'Кол тамганын ордуна сөз жазыңыз — мисалы «Макулмун» же атыңызды. / Напишите подпись словом — например «Макулмун» или своё имя.'; e.style.display = 'block'; $('p_sign').focus(); return; }
   var b = $('b'); b.disabled = true; b.textContent = 'Сакталууда…';
-  api({ op: 'accept', id: ID, t: T, name: d.name, pass: d.pass, iss: d.iss, val: d.val, addr: d.addr, sign: d.sign, rel: d.rel }).then(function(r) {
-    if (!r || !r.ok) { b.disabled = false; b.textContent = 'Окудум, макулмун ✓'; e.textContent = (r && r.error) || 'Сакталган жок, кайра басыңыз.'; e.style.display = 'block'; return; }
+  api({ op: 'accept', id: ID, t: T, name: d.name, pass: d.pass, iss: d.iss, val: d.val, addr: d.addr, sign: d.sign, rel: d.rel, agree: '1' }).then(function(r) {
+    if (!r || !r.ok) { b.textContent = 'Окудум, макулмун ✓'; agreeUpd(); e.textContent = (r && r.error) || 'Сакталган жок, кайра басыңыз.'; e.style.display = 'block'; return; }
     if (TEST && r.test) { $('w').innerHTML = '<h1>✓ Сынак өттү / Тест пройден</h1><div class="ok">Баары иштейт. Эч нерсе сакталган жок. / Всё работает, ничего не сохранено.</div><div class="mute" style="margin-top:10px">Шилтемени кайра ачып, дагы текшерсе болот. / Ссылку можно открыть снова и проверить ещё раз.</div>'; window.scrollTo(0, 0); return; }
     $('w').innerHTML = '<h1>✓ Рахмат!</h1><div class="ok">Келишим кабыл алынды · ' + esc(r.when || '') + '</div><div class="mute" style="margin-top:10px">Договор принят. Келишимдин көчүрмөсү борбордо сакталат; ошол эле шилтеме аркылуу аны каалаган убакта окуй аласыз.</div><div class="load" id="load2">Кол коюлган келишим жүктөлүүдө… <div class="bar"><i></i></div></div>';
     window.scrollTo(0, 0);
     api({ id: ID, t: T }).then(function(d2x) { var l2 = $('load2'); if (!l2) return; if (d2x && d2x.ok && d2x.text) { l2.outerHTML = '<div class="doc full ctdoc" style="margin-top:12px">' + docHtml(d2x.text, d2x.marks) + '</div>'; } else l2.remove(); }).catch(function() { var l2 = $('load2'); if (l2) l2.remove(); });
-  }).catch(function() { b.disabled = false; b.textContent = 'Окудум, макулмун ✓'; e.textContent = 'Байланыш үзүлдү, кайра басыңыз / Связь прервалась, нажмите ещё раз.'; e.style.display = 'block'; });
+  }).catch(function() { b.textContent = 'Окудум, макулмун ✓'; agreeUpd(); e.textContent = 'Байланыш үзүлдү, кайра басыңыз / Связь прервалась, нажмите ещё раз.'; e.style.display = 'block'; });
 }
 function load() {
   if (!ID || !T) { showFail('Шилтеме толук эмес. Борбордон келишимди кайра жөнөтүүнү сураныңыз. / Ссылка неполная — попросите центр отправить договор заново.', false); return; }
