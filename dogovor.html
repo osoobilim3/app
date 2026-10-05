@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#173f67">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
 <style>
-/* Страница договора для родителей (v11, сборка 573: ФИО только из паспорта — из заявки не подставляется (серая строка «в заявке было»), латиница из машиночитаемой строки как подсказка, поле пустое и оранжевое, пока ФИО не прочитано или не вписано; строки «Окуучуга ким болот» нет — в договоре только ФИО как в паспорте; v10, сборка 572: перед подписью — галочка «Келишимди окудум, макулмун»; кнопка активна только с галочкой и подписью, отметка о галочке уходит в журнал (agree=1); v9, сборка 571: в сообщении об ошибке нет строки «можно ответить «Макул» в чат» — договор подписывается только на странице; v8, сборка 570: номер и код из ссылки берутся без приклеенного хвоста — ссылка, вставленная в WhatsApp дважды подряд или без пробела перед текстом, открывается; v7, сборка 565: текст договора на странице заполняется введённым сразу (бланк tpl с полями родителя); ФИО из анкеты
+/* Страница договора для родителей (v12, сборка 580: три шага с индикатором; обязательны только ФИО и номер паспорта, остальное — «Кошумча маалымат (милдеттүү эмес)», раскрывается само, если прочиталось с фото / из анкеты / из договора семьи; второму ребёнку паспорт родителя подставляется из уже подписанного договора семьи (sib); «же колуңуз менен жазыңыз» видно всегда, пока нет карточки; перед полным текстом — выжимка (brief, текст ДОГОВОР_КЫСКАЧА); подписи словом нет — галочка + кнопка (п. 5.6), sign не отправляется; после подписи — «Эч нерсе жөнөтүүнүн кереги жок» и кнопки на других детей семьи (siblings); распознавание не работает (ocrDown) — сразу ручной ввод; v11, сборка 573: ФИО только из паспорта — из заявки не подставляется (серая строка «в заявке было»), латиница из машиночитаемой строки как подсказка, поле пустое и оранжевое, пока ФИО не прочитано или не вписано; строки «Окуучуга ким болот» нет — в договоре только ФИО как в паспорте; v10, сборка 572: перед подписью — галочка «Келишимди окудум, макулмун»; кнопка активна только с галочкой и подписью, отметка о галочке уходит в журнал (agree=1); v9, сборка 571: в сообщении об ошибке нет строки «можно ответить «Макул» в чат» — договор подписывается только на странице; v8, сборка 570: номер и код из ссылки берутся без приклеенного хвоста — ссылка, вставленная в WhatsApp дважды подряд или без пробела перед текстом, открывается; v7, сборка 565: текст договора на странице заполняется введённым сразу (бланк tpl с полями родителя); ФИО из анкеты
    убирается, если пол по паспорту ему не соответствует; v6, сборка 564: паспорт по двум сторонам — две плитки «лицевая / обратная», данные считываются сами после второго снимка,
    карточка «По паспорту» с правкой строк, мама/папа по полу из паспорта, ручной ввод под ссылкой; убраны кнопки ID/AN/AC, МКК/СӨМ и вопрос «кто заполняет»;
    v5, сборка 563: «кто заполняет» (мама / папа / представитель) — договор с тем, кто подписал; ученик 18+ — свои данные,
@@ -27,7 +27,6 @@ input:focus{outline:none;border-color:#173f67}
 .doc{border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;max-height:52vh;overflow:auto;margin:12px 0;-webkit-overflow-scrolling:touch}
 .doc.full{max-height:none}
 .box.sig{background:#eef6ff;border-color:#bfdbfe}
-#p_sign{font-family:"Segoe Script","Brush Script MT","Snell Roundhand",cursive;font-size:20px;color:#173f67}
 .agree{display:flex;align-items:flex-start;gap:12px;background:#fff;border:1.5px solid #bfdbfe;border-radius:12px;padding:12px;margin:10px 0 6px;cursor:pointer}
 .agree input{width:24px;height:24px;margin:1px 0 0;accent-color:#173f67;flex:none}
 .agree b{font-size:15px;display:block}.agree small{color:#64748b;font-size:12px;display:block;margin-top:2px}
@@ -84,6 +83,13 @@ input.rec{border-color:#34d399;background:#f0fdf4}.sw button.rec{border-color:#3
 .sum.manual .kv input{border-color:#d9dee8;background:#fff;text-align:left;font-weight:400}
 .kv.col{flex-direction:column;align-items:stretch;gap:2px}.kv.col span{flex:none}.kv.col input{text-align:left}
 .relrow{font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #d1fae5}.relrow span{color:#64748b;font-size:12px}
+/* v12: шаги, кошумча маалымат, выжимка, следующий ребёнок */
+.steps{display:flex;gap:4px;margin:8px 0 10px}.steps span{flex:1;text-align:center;font-size:11px;font-weight:700;color:#64748b;border-top:3px solid #d9dee8;padding-top:4px}.steps span.on{color:#173f67;border-color:#173f67}.steps span.done{color:#15803d;border-color:#34d399}
+.more{color:#173f67;font-weight:700;font-size:12.5px;cursor:pointer;margin-top:6px;background:none;border:0;padding:0;font-family:inherit;text-align:left}.more small{color:#64748b;font-weight:400}
+.extra{display:none}.extra.open{display:block}
+.brief{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px 6px;margin:8px 0 6px;font-size:13.5px;line-height:1.45}.brief b{display:block;margin-bottom:4px}.brief ul{margin:0 0 4px 18px;padding:0}.brief li{margin:2px 0}.brief .mute{margin-top:4px}
+.next{border:1.5px solid #bfdbfe;background:#eef6ff;border-radius:12px;padding:10px 12px;margin-top:10px;font-size:13px}.next .btn{margin-top:8px;padding:11px}.next .btn.done{background:#e3f3ea;color:#15803d}
+.sum.sib{background:#f0fdf4;border-color:#a7f3d0}
 .lnk{color:#173f67;font-weight:700;text-decoration:underline;cursor:pointer;font-size:12.5px;background:none;border:0;font-family:inherit;padding:0}
 </style>
 <style id="ctdocCss"></style>
@@ -191,45 +197,72 @@ function nameHint() {
 }
 /* строки карточки «По паспорту»: подпись + поле (правится нажатием) */
 function kv(id, label, val, ph, type, col) { return '<div class="kv' + (col ? ' col' : '') + '"><span>' + label + '</span><input id="' + id + '"' + (type ? ' type="' + type + '"' : '') + ' value="' + esc(val || '') + '" placeholder="' + esc(ph || '') + '" autocomplete="off"></div>'; }
-function sumHtml(cls, title) {
-  var ap = D ? anketaPass(D) : { doc: '', issuer: '', date: '', valid: '' };
+function sumHtml(cls, title, sib) {
+  var ap = sib ? { doc: sib.pass || '', issuer: '', date: '', valid: iso(String(sib.valid || '').match(/\d{2}\.\d{2}\.\d{4}/) ? String(sib.valid).match(/\d{2}\.\d{2}\.\d{4}/)[0] : '') } : (D ? anketaPass(D) : { doc: '', issuer: '', date: '', valid: '' });
+  if (sib) { var iss = String(sib.issued || '').trim(); var dm = iss.match(/(\d{2})\.(\d{2})\.(\d{4})/); if (dm) { ap.date = dm[3] + '-' + dm[2] + '-' + dm[1]; iss = iss.replace(dm[0], '').replace(/[,\s]+$/, '').trim(); } ap.issuer = iss; }
+  var addr = sib ? (sib.addr || '') : (D ? D.addr : '');
+  var hasExtra = !!(ap.issuer || ap.date || ap.valid || addr);
   return '<div class="sum ' + (cls || '') + '" id="sum"><h4 id="sumTitle">' + title + '</h4>'
-    + kv('p_name', (ADULT ? 'Сиздин аты-жөнүңүз / Ваше ФИО' : 'Аты-жөнү / ФИО') + ' — паспорттогудай / как в паспорте', '', 'Паспорттогудай жазыңыз / Напишите как в паспорте', '', true)
+    + kv('p_name', (ADULT ? 'Сиздин аты-жөнүңүз / Ваше ФИО' : 'Аты-жөнү / ФИО') + ' — паспорттогудай / как в паспорте', sib ? sib.parent : '', 'Паспорттогудай жазыңыз / Напишите как в паспорте', '', true)
     + nameHint()
     + kv('p_doc', 'Сериясы, номери / Серия, номер', ap.doc, 'ID 1234567')
+    + '<button type="button" class="more" id="extraBtn" onclick="extraToggle()">' + (hasExtra ? 'Кошумча маалымат ▾' : 'Кошумча маалымат ▸') + ' <small>(милдеттүү эмес / необязательно): ким берген · берилген · мөөнөтү · дареги</small></button>'
+    + '<div class="extra' + (hasExtra ? ' open' : '') + '" id="extra">'
     + kv('p_issuer', 'Ким берген / Кем выдан', ap.issuer, 'СӨМ 213011')
     + kv('p_date', 'Берилген / Выдан', ap.date, '', 'date')
     + kv('p_valid', 'Мөөнөтү / Действителен до', ap.valid, '', 'date')
-    + kv('p_addr', 'Дареги / Адрес', D.addr, 'Талас ш., Манас көч., 12', '', true)
+    + kv('p_addr', 'Дареги / Адрес', addr, 'Талас ш., Манас көч., 12', '', true)
+    + '</div>'
     + '<div id="passNote"></div><div class="mute" style="margin-top:6px">Катасы барбы? Сапты басып, оңдоңуз. / Строка неверна? Нажмите на неё и поправьте.</div></div>';
+}
+/* v12: «Кошумча маалымат» — свёрнуто, пока там пусто; открывается само, когда заполнилось с фото / из анкеты / из договора семьи */
+function extraToggle(force) { var e = $('extra'), b = $('extraBtn'); if (!e) return; var on = force === undefined ? !e.classList.contains('open') : !!force; e.classList.toggle('open', on); if (b) b.innerHTML = (on ? 'Кошумча маалымат ▾' : 'Кошумча маалымат ▸') + ' <small>(милдеттүү эмес / необязательно): ким берген · берилген · мөөнөтү · дареги</small>'; }
+function extraOpenIfFilled() { var ids = ['p_issuer', 'p_date', 'p_valid', 'p_addr']; if (ids.some(function(i) { var el = $(i); return el && el.value; })) extraToggle(true); }
+/* v12: индикатор шагов */
+function stepsHtml(k) { var names = ['1 · Паспорт', '2 · Келишим', '3 · Кол тамга']; return '<div class="steps">' + names.map(function(n, i) { return '<span class="' + (i < k ? 'done' : i === k ? 'on' : '') + '">' + n + (i < k ? ' ✓' : '') + '</span>'; }).join('') + '</div>'; }
+/* v12: выжимка договора (текст ДОГОВОР_КЫСКАЧА из журнала) перед полным текстом */
+function briefHtml(d) { var b = (d && d.brief) || []; if (!b.length) return ''; return '<div class="brief"><b>Кыскача / Коротко:</b><ul>' + b.map(function(x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul><div class="mute">Толук тексти төмөндө. / Полный текст — ниже.</div></div>'; }
+/* v12: другие дети семьи (тот же номер WhatsApp) — кнопки на их договоры; у подписанных — отметка */
+function nextKidsHtml(d) {
+  var list = (d && d.siblings) || []; if (!list.length) return '';
+  var pend = list.filter(function(x) { return !x.done; }), done = list.filter(function(x) { return x.done; });
+  var h = '';
+  if (pend.length) h += '<div class="next"><b>' + (pend.length === 1 ? 'Дагы бир бала / Ещё один ребёнок: ' + esc(pend[0].name) : 'Дагы балдар / Ещё дети: ' + pend.map(function(x) { return esc(x.first || x.name); }).join(', ')) + '</b><div class="mute" style="margin-top:2px">Паспорт маалыматтары өзү толот — текшерип, баскычты басыңыз. / Данные паспорта подставятся сами — проверьте и нажмите кнопку.</div>' + pend.map(function(x) { return '<a class="btn" href="' + esc(x.url) + '" style="text-decoration:none">' + esc(x.first || x.name) + ' үчүн кол коюу →</a>'; }).join('') + '</div>';
+  if (done.length) h += '<div class="mute" style="margin-top:8px">✓ Кол коюлган / подписано: ' + done.map(function(x) { return esc(x.name); }).join(', ') + '.</div>';
+  return h;
 }
 function render(d) {
   var head = '<h1>📄 Окуу келишими · ' + esc(d.student) + '</h1><div class="sub">' + esc(d.centre || '«Планета» билим берүү борбору') + ' · ' + esc(d.date || '') + '</div>'
     + (d.test ? '<div class="warn" id="testBar" style="margin:0 0 10px">🧪 Сынак — эч нерсе сакталбайт. / Тест — ничего не сохраняется.</div>' : '');
   if (d.done) {
-    $('w').innerHTML = head + '<div class="ok">✓ Келишим кабыл алынган · ' + esc(d.when || '') + '</div><div class="mute" style="margin-top:8px">Договор уже принят. Рахмат! Төмөндө — сиз макул болгон келишимдин тексти.</div><div class="doc full ctdoc">' + docHtml(d.text, d.marks) + '</div>'
+    $('w').innerHTML = head + '<div class="ok">✓ Келишим кабыл алынган · ' + esc(d.when || '') + '</div><div class="mute" style="margin-top:8px">Договор уже принят. Рахмат! Эч нерсе жөнөтүүнүн кереги жок. Төмөндө — сиз макул болгон келишимдин тексти.</div>'
+      + nextKidsHtml(d)
+      + '<div class="doc full ctdoc">' + docHtml(d.text, d.marks) + '</div>'
       + (d.when ? '<div class="stamp"><b>Окудум, макулмун / Прочитал(а), согласен(на).</b> Электрондук түрдө кабыл алынды: ' + esc(d.when) + (d.sign ? ' · кол тамга: «' + esc(d.sign) + '»' : '') + (d.stampPhone ? ' · WhatsApp ' + esc(d.stampPhone) : '') + (d.stampParent ? ' · ' + esc(d.stampParent) : '') + '.</div>' : '');
     return;
   }
   D = d; ADULT = !!d.adult; NAME_LAT = '';
-  var hasAnketa = !!(anketaPass(d).doc);
-  $('w').innerHTML = head
-    + '<div class="box"><b>1. ' + (ADULT ? 'Сиздин паспортуңуз / Ваш паспорт' : 'Паспорт / ID-карта') + '</b><div class="mute">' + (ADULT ? 'Сизге 18 жаш толгондуктан, келишим сиз менен түзүлөт. ' : '') + 'Эки тарабын тартыңыз — маалыматтар өзү толот. Сүрөт сакталбайт. / Снимите обе стороны — данные заполнятся сами. Фото не сохраняется.</div>'
-    + '<div class="tiles">' + tileHtml('A') + tileHtml('B') + '</div>'
-    + '<input type="file" id="camA" accept="image/*" class="vh" onchange="camGot(\'A\', this.files && this.files[0])"><input type="file" id="camB" accept="image/*" class="vh" onchange="camGot(\'B\', this.files && this.files[0])">'
-    + '<div class="mute" style="margin-top:8px">Түндүктөн: 1-экрандын скрини → 1, 2-экрандын → 2. / Из Тундук: скрин первого экрана → 1, второго → 2.</div>'
-    + '<button type="button" class="big" id="readBtn" onclick="camRead()" disabled>Маалыматтарды окуу / Считать данные</button>'
-    + '<div id="camState"></div>'
-    + '<div id="sumWrap">' + (hasAnketa ? sumHtml('', '✓ Анкетадан / Из анкеты — текшериңиз / проверьте') : '') + '</div>'
-    + '<div style="text-align:center;margin-top:10px" id="manualWrap">' + (hasAnketa ? '' : '<button type="button" class="lnk" onclick="manualOn()">Колуңуз менен жазуу / Заполнить вручную</button>') + '</div>'
+  var hasAnketa = !!(anketaPass(d).doc), sib = d.sib && d.sib.parent ? d.sib : null, ocrDown = !!d.ocrDown;
+  $('w').innerHTML = head + stepsHtml(0)
+    + '<div class="box"><b>1. ' + (ADULT ? 'Сиздин паспортуңуз / Ваш паспорт' : 'Паспорт / ID-карта') + '</b>'
+    + (sib ? '<div class="mute">' + (ADULT ? 'Сизге 18 жаш толгондуктан, келишим сиз менен түзүлөт. ' : '') + 'Маалыматтар ' + esc(sib.first || sib.name) + ' үчүн кол коюлган келишимден алынды — сүрөткө тартуунун кереги жок, текшерип эле коюңуз. / Данные взяты из договора за ' + esc(sib.first || sib.name) + ' — фотографировать не нужно, просто проверьте.</div>'
+      : ocrDown ? '<div class="mute">' + (ADULT ? 'Сизге 18 жаш толгондуктан, келишим сиз менен түзүлөт. ' : '') + 'Сүрөттөн окуу азыр убактылуу иштебейт — маалыматтарды колуңуз менен жазыңыз (аты-жөнү жана номери жетиштүү). / Распознавание по фото временно не работает — впишите данные вручную (достаточно ФИО и номера).</div>'
+      : '<div class="mute">' + (ADULT ? 'Сизге 18 жаш толгондуктан, келишим сиз менен түзүлөт. ' : '') + 'Эки тарабын тартыңыз — маалыматтар өзү толот. Сүрөт сакталбайт. / Снимите обе стороны — данные заполнятся сами. Фото не сохраняется.</div>'
+      + '<div class="tiles">' + tileHtml('A') + tileHtml('B') + '</div>'
+      + '<input type="file" id="camA" accept="image/*" class="vh" onchange="camGot(\'A\', this.files && this.files[0])"><input type="file" id="camB" accept="image/*" class="vh" onchange="camGot(\'B\', this.files && this.files[0])">'
+      + '<div class="mute" style="margin-top:8px">Түндүктөн: 1-экрандын скрини → 1, 2-экрандын → 2. / Из Тундук: скрин первого экрана → 1, второго → 2.</div>'
+      + '<button type="button" class="big" id="readBtn" onclick="camRead()" disabled>Маалыматтарды окуу / Считать данные</button>'
+      + '<div id="camState"></div>')
+    + '<div id="sumWrap">' + (sib ? sumHtml('sib', '✓ ' + esc(sib.first || sib.name) + ' үчүн келишимден алынды — текшериңиз / Из договора за ' + esc(sib.first || sib.name) + ' — проверьте', sib) : hasAnketa ? sumHtml('', '✓ Анкетадан / Из анкеты — текшериңиз / проверьте') : ocrDown ? sumHtml('manual', 'Паспорт боюнча / По паспорту — жазыңыз / впишите') : '') + '</div>'
+    + '<div style="text-align:center;margin-top:10px" id="manualWrap">' + (sib || hasAnketa || ocrDown ? '' : '<button type="button" class="lnk" onclick="manualOn()">же колуңуз менен жазыңыз ↓ / или заполните вручную</button>') + '</div>'
     + '</div>'
-    + '<b>2. Келишимдин тексти</b><div class="doc ctdoc" id="docBox">' + docHtml(d.text, d.marks) + '</div>'
+    + '<b>2. Келишимдин тексти</b>' + briefHtml(d) + '<div class="doc ctdoc" id="docBox">' + docHtml(d.text, d.marks) + '</div>'
     + '<div class="box sig"><b>3. Кол тамга / Подпись</b>'
     + '<label class="agree" id="agreeRow"><input type="checkbox" id="p_agree" onchange="agreeUpd()"><span><b>Келишимди окудум, макулмун</b><small>Прочитал(а) договор, согласен(на) с условиями</small></span></label>'
-    + '<div class="mute">Кол тамганын ордуна өз колуңуз менен жазыңыз — мисалы «Макулмун» же атыңызды. / Вместо подписи напишите своей рукой — например «Макулмун» или своё имя.</div>'
-    + '<label>КОЛ ТАМГА / ПОДПИСЬ</label><input id="p_sign" placeholder="Макулмун" autocomplete="off" maxlength="60" oninput="agreeUpd()"><div class="mute" style="margin-top:6px">Жазганыңыз келишимге кол тамга катары жазылат — дата, убакыт жана WhatsApp номери менен бирге.</div></div>'
-    + '<div class="err" id="err"></div><button class="btn" id="b" onclick="go()" disabled>Окудум, макулмун ✓</button><div class="mute" id="bHint" style="margin-top:8px;text-align:center">Адегенде жогорудагы белгини коюп, кол тамгаңызды жазыңыз. / Сначала поставьте галочку выше и напишите подпись.</div>';
-  if (hasAnketa) { passCheck(); if ($('p_name') && !$('p_name').value) $('p_name').classList.add('need'); }   /* v11: ФИО всегда вписывается заново — как в паспорте */
+    + '<div class="err" id="err"></div><button class="btn" id="b" onclick="go()" disabled>✓ Окудум, макулмун — кол коём</button><div class="mute" id="bHint" style="margin-top:8px;text-align:center">Адегенде жогорудагы белгини коюңуз. / Сначала поставьте галочку выше.</div>'
+    + '<div class="mute" style="margin-top:6px">Баскычты басканда дата, убакыт жана WhatsApp номериңиз келишимге кол тамга катары жазылат (п. 5.6). Сөз жазуунун кереги жок. / При нажатии дата, время и ваш номер WhatsApp записываются в договор как подпись (п. 5.6).</div></div>';
+  if (sib) { passCheck(); ['p_name', 'p_doc', 'p_issuer', 'p_date', 'p_valid', 'p_addr'].forEach(function(i) { var el = $(i); if (el && el.value) el.classList.add('rec'); }); }
+  else if (hasAnketa || ocrDown) { passCheck(); if ($('p_name') && !$('p_name').value) $('p_name').classList.add('need'); if ($('p_doc') && !$('p_doc').value) $('p_doc').classList.add('need'); }   /* v11: ФИО всегда вписывается заново — как в паспорте */
   liveDoc();
 }
 /* v6: плитки двух сторон */
@@ -272,7 +305,7 @@ function camRead() {
   }).catch(function() { rb.disabled = false; camFail('Байланыш үзүлдү — кайра аракет кылыңыз же колуңуз менен жазыңыз. / Связь прервалась — попробуйте ещё раз или впишите вручную.'); });
 }
 function camFail(msg, dg) { $('camState').innerHTML = '<div class="warn" id="camWarn">' + esc(msg) + (dg || '') + '</div>'; if (!$('sum')) $('manualWrap').innerHTML = '<button type="button" class="lnk" onclick="manualOn()">Колуңуз менен жазуу / Заполнить вручную</button>'; }
-function manualOn() { if (!$('sum')) $('sumWrap').innerHTML = sumHtml('manual', 'Паспорт боюнча / По паспорту — жазыңыз / впишите'); $('manualWrap').innerHTML = ''; if (!$('p_name').value) $('p_name').classList.add('need'); $('p_name').focus(); liveDoc(); }
+function manualOn() { if (!$('sum')) $('sumWrap').innerHTML = sumHtml('manual', 'Паспорт боюнча / По паспорту — жазыңыз / впишите'); $('manualWrap').innerHTML = ''; if (!$('p_name').value) $('p_name').classList.add('need'); if ($('p_doc') && !$('p_doc').value) $('p_doc').classList.add('need'); $('p_name').focus(); liveDoc(); }
 /* v7: текст договора на странице — с тем, что введено (бланк tpl с полями родителя); пока карточки нет — как пришло с сервера */
 function liveDoc() {
   var box = $('docBox'); if (!box || !D) return;
@@ -298,6 +331,7 @@ function camFill(f) {
   set('p_issuer', f.code ? ((f.how === 'МКК' || f.how === 'СӨМ') ? f.how + ' ' : '') + f.code : '');
   set('p_date', iso(f.iss)); set('p_valid', iso(f.val));
   if (f.addr) set('p_addr', f.addr);
+  extraOpenIfFilled();   /* v12 */
   VERIFIED = !!(f.verified && f.verified.num && f.verified.val);
   var miss = [];
   if (SIDES.A && !$('p_name').value) miss.push('Аты-жөнү окулган жок — алдыңкы бетин жакындан кайра тартыңыз же паспорттогудай жазыңыз. / ФИО не прочиталось — переснимите лицевую сторону ближе или впишите точно как в паспорте.');
@@ -319,33 +353,29 @@ function passCheck(miss) {
 }
 document.addEventListener('input', function(e) { if (e.target && e.target.classList) { e.target.classList.remove('rec'); e.target.classList.remove('need'); } if (e.target && /^p_/.test(e.target.id || '')) liveSoon(); });
 document.addEventListener('change', function(e) { if (e.target && e.target.id === 'p_valid') passCheck(); if (e.target && /^p_/.test(e.target.id || '')) liveSoon(); });
-/* v10: галочка «Келишимди окудум, макулмун» + подпись словом → кнопка активна */
-function signOk() { var s = $('p_sign'); return !!s && s.value.trim().replace(/[^A-Za-zА-Яа-яЁёҢңӨөҮү]/g, '').length >= 3; }
+/* v12: галочка «Келишимди окудум, макулмун» → кнопка активна (подписи словом больше нет — п. 5.6: галочка + кнопка + номер + время) */
 function agreeUpd() {
   var a = $('p_agree'), b = $('b'), h = $('bHint'), row = $('agreeRow'); if (!a || !b) return;
   var on = a.checked; if (row) row.className = 'agree' + (on ? ' on' : '');
-  var ready = on && signOk(); b.disabled = !ready;
-  if (h) h.textContent = ready ? 'Прочитал(а), согласен(на). Баскычты басканда келишим кабыл алынды деп эсептелет: дата, убакыт жана номер журналга жазылат.'
-    : !on ? 'Адегенде жогорудагы белгини коюп, кол тамгаңызды жазыңыз. / Сначала поставьте галочку выше и напишите подпись.'
-    : 'Эми кол тамгаңызды жазыңыз — мисалы «Макулмун». / Теперь напишите подпись — например «Макулмун».';
+  b.disabled = !on;
+  if (h) h.textContent = on ? 'Баскычты басканда келишим кабыл алынды деп эсептелет: дата, убакыт жана номер журналга жазылат. / Нажатие кнопки — принятие договора.' : 'Адегенде жогорудагы белгини коюңуз. / Сначала поставьте галочку выше.';
 }
 function go() {
   var e = $('err'); e.style.display = 'none';
   if (!$('p_agree') || !$('p_agree').checked) { e.textContent = 'Адегенде «Келишимди окудум, макулмун» белгисин коюңуз. / Сначала поставьте галочку «Прочитал(а) договор, согласен(на)».'; e.style.display = 'block'; return; }
-  if (!$('sum')) { e.textContent = 'Паспортту сүрөткө тартыңыз же «Колуңуз менен жазуу» дегенди басыңыз. / Сфотографируйте паспорт или нажмите «Заполнить вручную».'; e.style.display = 'block'; return; }
+  if (!$('sum')) { e.textContent = 'Паспортту сүрөткө тартыңыз же «колуңуз менен жазыңыз» дегенди басыңыз. / Сфотографируйте паспорт или нажмите «заполните вручную».'; e.style.display = 'block'; return; }
   var doc = $('p_doc').value.trim().replace(/\s+/g, ' ').toUpperCase(), issuer = $('p_issuer').value.trim().replace(/\s+/g, ' ');
-  var d = { name: $('p_name').value.trim().replace(/\s+/g, ' '), pass: doc, iss: issuer + (d2($('p_date').value) ? (issuer ? ', ' : '') + d2($('p_date').value) : ''), val: d2($('p_valid').value), addr: $('p_addr').value.trim(), sign: $('p_sign').value.trim().replace(/\s+/g, ' '), rel: '' };
-  if (d.name.length < 5) { e.textContent = ADULT ? 'Аты-жөнүңүздү жазыңыз / Напишите ваше ФИО.' : 'Ата-эненин аты-жөнүн жазыңыз / Напишите ФИО родителя.'; e.style.display = 'block'; $('p_name').focus(); return; }
+  var d = { name: $('p_name').value.trim().replace(/\s+/g, ' '), pass: doc, iss: issuer + (d2($('p_date').value) ? (issuer ? ', ' : '') + d2($('p_date').value) : ''), val: d2($('p_valid').value), addr: $('p_addr').value.trim(), sign: '', rel: '' };
+  if (d.name.length < 5) { e.textContent = ADULT ? 'Аты-жөнүңүздү жазыңыз / Напишите ваше ФИО.' : 'Ата-эненин аты-жөнүн паспорттогудай жазыңыз / Напишите ФИО родителя как в паспорте.'; e.style.display = 'block'; $('p_name').focus(); return; }
   if (!/\d{5}/.test(doc)) { e.textContent = 'Паспорттун сериясын жана номерин жазыңыз (мисалы ID 1234567) же сүрөткө тартыңыз. / Укажите серию и номер паспорта (например ID 1234567) или сфотографируйте.'; e.style.display = 'block'; $('p_doc').focus(); return; }
-  if (d.sign.replace(/[^A-Za-zА-Яа-яЁёҢңӨөҮү]/g, '').length < 3) { e.textContent = 'Кол тамганын ордуна сөз жазыңыз — мисалы «Макулмун» же атыңызды. / Напишите подпись словом — например «Макулмун» или своё имя.'; e.style.display = 'block'; $('p_sign').focus(); return; }
   var b = $('b'); b.disabled = true; b.textContent = 'Сакталууда…';
-  api({ op: 'accept', id: ID, t: T, name: d.name, pass: d.pass, iss: d.iss, val: d.val, addr: d.addr, sign: d.sign, rel: d.rel, agree: '1' }).then(function(r) {
-    if (!r || !r.ok) { b.textContent = 'Окудум, макулмун ✓'; agreeUpd(); e.textContent = (r && r.error) || 'Сакталган жок, кайра басыңыз.'; e.style.display = 'block'; return; }
-    if (TEST && r.test) { $('w').innerHTML = '<h1>✓ Сынак өттү / Тест пройден</h1><div class="ok">Баары иштейт. Эч нерсе сакталган жок. / Всё работает, ничего не сохранено.</div><div class="mute" style="margin-top:10px">Шилтемени кайра ачып, дагы текшерсе болот. / Ссылку можно открыть снова и проверить ещё раз.</div>'; window.scrollTo(0, 0); return; }
-    $('w').innerHTML = '<h1>✓ Рахмат!</h1><div class="ok">Келишим кабыл алынды · ' + esc(r.when || '') + '</div><div class="mute" style="margin-top:10px">Договор принят. Келишимдин көчүрмөсү борбордо сакталат; ошол эле шилтеме аркылуу аны каалаган убакта окуй аласыз.</div><div class="load" id="load2">Кол коюлган келишим жүктөлүүдө… <div class="bar"><i></i></div></div>';
+  api({ op: 'accept', id: ID, t: T, name: d.name, pass: d.pass, iss: d.iss, val: d.val, addr: d.addr, sign: '', rel: d.rel, agree: '1' }).then(function(r) {
+    if (!r || !r.ok) { b.textContent = '✓ Окудум, макулмун — кол коём'; agreeUpd(); e.textContent = (r && r.error) || 'Сакталган жок, кайра басыңыз.'; e.style.display = 'block'; return; }
+    if (TEST && r.test) { $('w').innerHTML = '<h1>✓ Сынак өттү / Тест пройден</h1><div class="ok">Баары иштейт. Эч нерсе сакталган жок. / Всё работает, ничего не сохранено.</div><div class="mute" style="margin-top:10px">Шилтемени кайра ачып, дагы текшерсе болот. / Ссылку можно открыть снова и проверить ещё раз.</div>' + nextKidsHtml(D); window.scrollTo(0, 0); return; }
+    $('w').innerHTML = '<h1>✓ Рахмат!</h1><div class="ok">Келишим кабыл алынды · ' + esc(r.when || '') + '</div><div class="stamp">Эч нерсе жөнөтүүнүн кереги жок. Келишимдин көчүрмөсү борбордо сакталат; ошол эле шилтеме аркылуу аны каалаган убакта окуй аласыз. / Договор принят, больше ничего отправлять не нужно.</div>' + nextKidsHtml(D) + '<div class="load" id="load2">Кол коюлган келишим жүктөлүүдө… <div class="bar"><i></i></div></div>';
     window.scrollTo(0, 0);
     api({ id: ID, t: T }).then(function(d2x) { var l2 = $('load2'); if (!l2) return; if (d2x && d2x.ok && d2x.text) { l2.outerHTML = '<div class="doc full ctdoc" style="margin-top:12px">' + docHtml(d2x.text, d2x.marks) + '</div>'; } else l2.remove(); }).catch(function() { var l2 = $('load2'); if (l2) l2.remove(); });
-  }).catch(function() { b.textContent = 'Окудум, макулмун ✓'; agreeUpd(); e.textContent = 'Байланыш үзүлдү, кайра басыңыз / Связь прервалась, нажмите ещё раз.'; e.style.display = 'block'; });
+  }).catch(function() { b.textContent = '✓ Окудум, макулмун — кол коём'; agreeUpd(); e.textContent = 'Байланыш үзүлдү, кайра басыңыз / Связь прервалась, нажмите ещё раз.'; e.style.display = 'block'; });
 }
 function load() {
   if (!ID || !T) { showFail('Шилтеме толук эмес. Борбордон келишимди кайра жөнөтүүнү сураныңыз. / Ссылка неполная — попросите центр отправить договор заново.', false); return; }
