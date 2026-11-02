@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f2a4f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Олимпиада">
+<title>Планета · Олимпиада</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:#f4f8fc;color:#0f2a4f;font-family:-apple-system,"Segoe UI",Inter,Roboto,Arial,sans-serif;font-size:16px;line-height:1.35}
+body{min-height:100vh;display:flex;flex-direction:column}
+.scr{display:none;flex-direction:column;flex:1;max-width:560px;width:100%;margin:0 auto}
+.scr.on{display:flex}
+.top{background:linear-gradient(135deg,#0f2a4f,#1d4ed8);color:#fff;padding:calc(14px + env(safe-area-inset-top,0px)) 18px 18px;border-radius:0 0 22px 22px}
+.top .t{font-size:12px;opacity:.85;letter-spacing:.3px;text-transform:uppercase}
+.top h1{margin:4px 0 0;font-size:21px;font-weight:800;line-height:1.2}
+.top .sub{font-size:13px;opacity:.9;margin-top:4px}
+.top .back{display:inline-block;color:#fff;text-decoration:none;font-size:14px;opacity:.9;margin-bottom:6px;cursor:pointer}
+.pad{padding:14px 16px calc(16px + env(safe-area-inset-bottom,0px));flex:1}
+.card{background:#fff;border-radius:16px;padding:14px;box-shadow:0 2px 8px rgba(15,42,79,.08);margin-bottom:12px}
+.card h3{margin:0 0 6px;font-size:15px}
+.muted{color:#64748b;font-size:12.5px}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:14px;font-size:16px;font-weight:700;background:#2563eb;color:#fff;text-align:center;cursor:pointer;font-family:inherit}
+.btn:disabled{opacity:.5}
+.btn.ghost{background:#e8effa;color:#1d4ed8}
+.btn.ok{background:#16a34a}
+.btn.sm{padding:10px 12px;font-size:14px;width:auto;display:inline-block;border-radius:11px}
+.two{display:flex;gap:10px}.two .btn{flex:1;padding:13px 8px;font-size:15px}
+.code{display:flex;gap:10px;justify-content:center;margin:16px 0}
+.code input{width:170px;height:62px;border:2px solid #bfd2ea;border-radius:12px;background:#fff;font-size:30px;font-weight:800;text-align:center;letter-spacing:12px;color:#0f2a4f;font-family:inherit;outline:none}
+.code input:focus{border-color:#2563eb}
+.warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:14px;padding:10px 12px;font-size:13px}
+.err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:14px;padding:10px 12px;font-size:13.5px}
+.ring{width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
+.ring b{width:64px;height:64px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:16px}
+.mod{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #eef2f7;cursor:pointer}
+.mod:last-child{border-bottom:0}
+.mod .ic{font-size:20px;width:30px;text-align:center;flex:none}
+.mod>div{flex:1;min-width:0}
+.mod b{display:block;font-size:14px}
+.mod small{display:block;color:#64748b;font-size:11.5px}
+.mod .st{font-weight:800;color:#94a3b8;font-size:13px;flex:none}
+.mod .st.on{color:#f59e0b;font-size:20px}
+.days{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.d{background:#fff;border-radius:12px;padding:8px 4px;text-align:center;font-size:11px;color:#64748b;border:1.5px solid #e2e8f0;cursor:pointer}
+.d b{display:block;font-size:14px;color:#0f2a4f}
+.d .st{color:#f59e0b;font-size:11px;font-weight:700}
+.d.done{border-color:#86efac;background:#f0fdf4}
+.d.today{border-color:#2563eb;background:#eff6ff;box-shadow:0 0 0 2px #bfdbfe}
+.d.lock{opacity:.55;background:#f1f5f9;cursor:default}.d.lock b{color:#94a3b8}
+.bar{height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden;margin:10px 0 4px}
+.bar i{display:block;height:100%;background:#2563eb;transition:width .3s}
+.fc{background:#fff;border-radius:20px;padding:26px 18px;text-align:center;box-shadow:0 8px 24px rgba(15,42,79,.12);margin:8px 0 14px;min-height:230px}
+.fc .w{font-size:30px;font-weight:800;color:#0f2a4f}
+.fc .sp{font-size:13px;color:#2563eb;margin-top:4px;cursor:pointer}
+.fc .def{font-size:15px;margin-top:14px;color:#1e293b}
+.fc .ru{font-size:17px;font-weight:700;color:#1d4ed8;margin-top:10px}
+.q{font-size:17px;font-weight:700;margin:4px 0 12px;line-height:1.35}
+.q .orig{display:block;background:#eff6ff;border-radius:12px;padding:10px 12px;font-style:italic;font-weight:600;margin:6px 0 8px;font-size:15px}
+.opt{display:block;width:100%;background:#fff;border:2px solid #e2e8f0;border-radius:14px;padding:12px 14px;font-size:15.5px;font-weight:600;margin-bottom:9px;color:#0f2a4f;text-align:left;cursor:pointer;font-family:inherit;line-height:1.3}
+.opt.ok{border-color:#22c55e;background:#f0fdf4}
+.opt.no{border-color:#f87171;background:#fef2f2;color:#991b1b}
+.opt:disabled{cursor:default}
+.ex{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;font-size:13.5px;margin:4px 0 10px}
+.ex .en{color:#475569;font-size:12.5px;margin-top:4px}
+.txt{background:#fff;border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.5;color:#1e293b;margin-bottom:12px;white-space:pre-wrap;max-height:40vh;overflow:auto;border:1px solid #e2e8f0}
+.txt.hid{display:none}
+.res{text-align:center;padding:10px 0 4px}
+.res .big{font-size:46px;font-weight:900;color:#16a34a}
+.res .big.no{color:#b91c1c}
+.res .stars{font-size:30px;letter-spacing:2px;margin:6px 0;color:#f59e0b}
+.res .stars i{font-style:normal;color:#cbd5e1}
+.pill{display:inline-block;background:#dcfce7;color:#166534;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700}
+.pill.w{background:#fef3c7;color:#92400e}
+.flag{font-size:12px;color:#94a3b8;text-align:right;cursor:pointer;margin-top:4px}
+.foot{text-align:center;font-size:10.5px;color:#94a3b8;padding:8px 8px calc(10px + env(safe-area-inset-bottom,0px))}
+.spin{width:28px;height:28px;border:3px solid #dbe6f5;border-top-color:#2563eb;border-radius:50%;animation:sp 1s linear infinite;margin:40px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+.pop{position:fixed;inset:0;background:rgba(15,42,79,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:9}
+.pop.on{display:flex}
+.pop .bx{background:#fff;border-radius:18px;padding:18px;max-width:420px;width:100%}
+.pop textarea{width:100%;height:90px;border:1px solid #cbd5e1;border-radius:10px;padding:8px;font-family:inherit;font-size:14px}
+.starbig{font-size:64px;animation:pop .6s ease}
+@keyframes pop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0f2a4f;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;display:none;z-index:10;max-width:90%}
+</style>
+</head>
+<body>
+<!-- загрузка -->
+<div class="scr on" id="scrLoad"><div class="top"><div class="t">ОЦ «Планета» · Олимпиада</div><h1>Подготовка</h1><div class="sub">Загрузка…</div></div><div class="pad"><div class="spin"></div></div></div>
+<!-- ошибка / закрыто -->
+<div class="scr" id="scrErr"><div class="top"><div class="t">ОЦ «Планета» · Олимпиада</div><h1 id="errT">Не удалось открыть</h1></div><div class="pad"><div class="err" id="errM"></div><div class="muted" style="margin-top:12px">По вопросам: WhatsApp <a href="https://wa.me/996755494494">0755 494 494</a> (ОЦ «Планета»)</div><div style="margin-top:14px"><button class="btn ghost" onclick="start()">Попробовать ещё раз</button></div></div><div class="foot">Автор и разработчик системы — Базарматов Б. У.</div></div>
+<!-- код -->
+<div class="scr" id="scrCode"><div class="top"><div class="t">ОЦ «Планета» · Олимпиада</div><h1 id="codeName"></h1><div class="sub">Первый вход на этом устройстве</div></div>
+ <div class="pad">
+  <div class="card"><h3>Подтвердите, что это ваш телефон</h3><div class="muted" id="codeInfo">Сейчас отправим код в WhatsApp родителя…</div>
+   <div class="code"><input id="codeIn" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="····" autocomplete="one-time-code"></div>
+   <button class="btn" id="codeBtn" onclick="verify()">Войти</button>
+   <div class="muted" style="text-align:center;margin-top:10px"><span id="codeAgain">Код не пришёл? <u style="cursor:pointer" onclick="askCode(true)">Отправить ещё раз</u></span></div>
+   <div class="err" id="codeErr" style="display:none;margin-top:10px"></div></div>
+  <div class="warn">Ссылка личная: работает на телефоне ученика и ещё на одном-двух устройствах. Если переслать её другому — у него не откроется.</div>
+ </div><div class="foot">Автор и разработчик системы — Базарматов Б. У.</div></div>
+<!-- главный -->
+<div class="scr" id="scrHome"><div class="top"><div class="t" id="homeT"></div><h1 id="homeH"></h1><div class="sub" id="homeS"></div></div>
+ <div class="pad" id="homeBody"></div><div class="foot">Автор и разработчик системы — Базарматов Б. У.</div></div>
+<!-- день -->
+<div class="scr" id="scrDay"><div class="top"><a class="back" onclick="go('home')">← Все дни</a><div class="t" id="dayT"></div><h1 id="dayH"></h1><div class="sub" id="daySub"></div></div>
+ <div class="pad" id="dayBody"></div><div class="foot">Автор и разработчик системы — Базарматов Б. У.</div></div>
+<!-- учить -->
+<div class="scr" id="scrLearn"><div class="top" style="padding-bottom:14px"><a class="back" onclick="go('day')">← К заданиям дня</a><div class="t" id="learnT"></div><h1 id="learnH" style="font-size:18px"></h1></div>
+ <div class="pad" id="learnBody"></div></div>
+<!-- тест -->
+<div class="scr" id="scrTest"><div class="top" style="padding-bottom:14px"><a class="back" onclick="quitTest()">← Выйти из теста</a><div class="t" id="testT"></div><h1 id="testH" style="font-size:17px"></h1></div>
+ <div class="pad" id="testBody"></div></div>
+<!-- результат -->
+<div class="scr" id="scrRes"><div class="top"><div class="t" id="resT"></div><h1>Результат</h1></div><div class="pad" id="resBody"></div><div class="foot">Автор и разработчик системы — Базарматов Б. У.</div></div>
+<div class="pop" id="pop"><div class="bx"><h3 style="margin:0 0 8px">Что не так в этом вопросе?</h3><textarea id="popT" placeholder="Например: правильный ответ другой, опечатка в слове…"></textarea><div class="two" style="margin-top:10px"><button class="btn ghost" onclick="$('pop').classList.remove('on')">Отмена</button><button class="btn" onclick="sendReport()">Отправить</button></div></div></div>
+<div class="toast" id="toast"></div>
+<script>
+/* Планета · Олимпиада — сайт подготовки (сборка 699). Запросы к кабинету — без cookies (анонимно), как у страницы договора. */
+var API = 'https://script.google.com/macros/s/AKfycby0O1aycallOk5fTZUa5L_CG432hMARssdKtmOHsJzMaqOHvFUkYrYUCQKeqyTxCW8rcQ/exec';
+var Q = new URLSearchParams(location.search);
+var K = (String(Q.get('k') || '').match(/^[0-9a-f]{16}/i) || [''])[0].toLowerCase();
+var ICON = { vocab: '📖', colloc: '🔗', synonyms: '🟰', paraphrase: '✍️', reading: '📰' };
+var ME = null, DAYS = {}, CUR = { day: 0, mod: '' }, T = null, LEARN = null, HIST = [];
+function $(i) { return document.getElementById(i); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function ck(k, v) { try { if (v === undefined) { var m = document.cookie.match(new RegExp('(?:^|; )' + k + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : null; } document.cookie = k + '=' + encodeURIComponent(v === null ? '' : v) + '; max-age=' + (v === null ? 0 : 31536000) + '; path=/; SameSite=Lax'; } catch (e) { return null; } }
+function ls(k, v) { var small = (k === 'olimp_k' || k === 'olimp_dev'); try { if (v === undefined) { var x = localStorage.getItem(k); return x === null && small ? ck(k) : x; } if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); if (small) ck(k, v); } catch (e) { return small ? (v === undefined ? ck(k) : ck(k, v)) : null; } }
+function toast(t) { var e = $('toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(e._t); e._t = setTimeout(function() { e.style.display = 'none'; }, 2600); }
+function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function dm(iso) { return iso ? String(iso).split('-').reverse().slice(0, 2).join('.') : ''; }
+function plural(n, a, b, c) { n = Math.abs(n) % 100; var m = n % 10; if (n > 10 && n < 20) return c; if (m > 1 && m < 5) return b; if (m === 1) return a; return c; }
+if (K) ls('olimp_k', K); else K = ls('olimp_k') || '';
+var DEV = ls('olimp_dev'); if (!DEV) { DEV = 'd' + Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10); ls('olimp_dev', DEV); }
+function devName() { var u = navigator.userAgent; return (/iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) ? 'iPad' : /Android/.test(u) ? 'Android' : /Windows/.test(u) ? 'Windows' : /Mac/.test(u) ? 'Mac' : 'телефон') + (/WhatsApp/.test(u) ? ' · WhatsApp' : ''); }
+function api(params, post) {
+  var p = Object.assign({ page: 'olimp_api', k: K, dev: DEV }, params);
+  var ctl = typeof AbortController === 'function' ? new AbortController() : null; if (ctl) setTimeout(function() { ctl.abort(); }, 45000);
+  var req = post ? fetch(API + '?page=olimp_api', { method: 'POST', body: JSON.stringify(p), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, credentials: 'omit', redirect: 'follow', signal: ctl ? ctl.signal : undefined })
+                 : fetch(API + '?' + new URLSearchParams(p).toString(), { method: 'GET', credentials: 'omit', redirect: 'follow', cache: 'no-store', signal: ctl ? ctl.signal : undefined });
+  return req.then(function(r) { return r.text(); }).then(function(t) { try { return JSON.parse(t); } catch (e) { throw new Error('bad json'); } });
+}
+function show(id) { document.querySelectorAll('.scr').forEach(function(s) { s.classList.remove('on'); }); $(id).classList.add('on'); window.scrollTo(0, 0); }
+function go(where) { if (where === 'home') { renderHome(); show('scrHome'); } else if (where === 'day') { renderDay(); show('scrDay'); } }
+function fail(title, msg) { $('errT').textContent = title; $('errM').textContent = msg; show('scrErr'); }
+/* ---------- вход ---------- */
+function start() {
+  show('scrLoad');
+  if (!K) return fail('Нет ссылки', 'Откройте личную ссылку из WhatsApp — её отправил центр «Планета» родителю.');
+  flushQueue();
+  api({ op: 'hello' }).then(function(r) {
+    if (r.ok) { ME = r; renderHome(); show('scrHome'); return; }
+    if (r.code === 'need_code') { $('codeName').textContent = r.name || ''; show('scrCode'); askCode(false); return; }
+    fail(r.code === 'closed' ? 'Сайт закрыт' : 'Не удалось открыть', r.text || 'Ошибка.');
+  }).catch(function() { fail('Нет связи', 'Проверьте интернет и попробуйте ещё раз.'); });
+}
+var codeWait = 0;
+function askCode(again) {
+  var now = Date.now(); if (again && now < codeWait) { toast('Подождите ' + Math.ceil((codeWait - now) / 1000) + ' сек.'); return; }
+  $('codeErr').style.display = 'none'; $('codeInfo').textContent = 'Отправляем код…';
+  api({ op: 'code' }).then(function(r) {
+    if (r.ok && r.bound) { start(); return; }
+    if (r.ok) { codeWait = Date.now() + 45000; $('codeInfo').innerHTML = 'Код отправлен в WhatsApp родителя<br><b style="color:#0f2a4f">' + esc(r.phone) + '</b> · действует 10 минут' + (r.wait ? '<br><span style="color:#92400e">Код уже отправляли меньше минуты назад — посмотрите WhatsApp</span>' : ''); setTimeout(function() { try { $('codeIn').focus(); } catch (e) {} }, 300); return; }
+    if (r.code === 'device' || r.code === 'closed' || r.code === 'nophone' || r.code === 'limit') { fail('Вход невозможен', r.text); return; }
+    $('codeErr').textContent = r.text || 'Не удалось отправить код.'; $('codeErr').style.display = 'block'; $('codeInfo').textContent = 'Код не отправлен.';
+  }).catch(function() { $('codeErr').textContent = 'Нет связи. Попробуйте ещё раз.'; $('codeErr').style.display = 'block'; });
+}
+function verify() {
+  var c = String($('codeIn').value || '').replace(/\D/g, ''); if (c.length !== 4) { $('codeErr').textContent = 'Введите 4 цифры из WhatsApp.'; $('codeErr').style.display = 'block'; return; }
+  $('codeBtn').disabled = true; $('codeErr').style.display = 'none';
+  api({ op: 'verify', code: c, dn: devName() }).then(function(r) {
+    $('codeBtn').disabled = false;
+    if (r.ok) { ME = r; renderHome(); show('scrHome'); toast('Добро пожаловать!'); return; }
+    if (r.code === 'device') { fail('Вход невозможен', r.text); return; }
+    $('codeErr').textContent = r.text || 'Не удалось.'; $('codeErr').style.display = 'block';
+  }).catch(function() { $('codeBtn').disabled = false; $('codeErr').textContent = 'Нет связи. Попробуйте ещё раз.'; $('codeErr').style.display = 'block'; });
+}
+$('codeIn').addEventListener('input', function() { this.value = this.value.replace(/\D/g, '').slice(0, 4); if (this.value.length === 4) verify(); });
+/* ---------- главный экран ---------- */
+function prog(day, mod) { return (ME && ME.progress && ME.progress[day + '|' + mod]) || { p: 0, t: 0, b: 0, l: 0, s: '' }; }
+function dayStars(day) { var n = 0; ME.mods.forEach(function(m) { if (prog(day, m).s) n++; }); return n; }
+function daysLeft() { var a = new Date(ME.today + 'T00:00:00'), b = new Date(ME.eventDate + 'T00:00:00'); return Math.round((b - a) / 86400000); }
+function renderHome() {
+  var left = daysLeft(), dn = ME.dayNo, total = ME.days * ME.mods.length;
+  $('homeT').textContent = 'ОЦ «Планета» · Олимпиада ' + dm(ME.eventDate) + ' · ' + ME.trackName;
+  $('homeH').textContent = ME.first + ', привет!';
+  $('homeS').textContent = (left > 0 ? 'До олимпиады ' + left + ' ' + plural(left, 'день', 'дня', 'дней') : (left === 0 ? 'Олимпиада сегодня!' : 'Олимпиада прошла')) + (dn ? ' · сегодня день ' + dn : ' · старт ' + dm(ME.start)) + ' · ★ ' + ME.stars + ' из ' + total;
+  var h = '';
+  if (!dn) h += '<div class="card"><h3>Занятия начнутся ' + esc(dm(ME.start)) + '</h3><div class="muted">Каждый день будет открываться новый набор заданий: слова, словосочетания, синонимы, перефразирование и чтение.</div></div>';
+  else {
+    h += '<div class="card" style="border:2px solid #2563eb;padding:12px 14px;cursor:pointer" onclick="openDay(' + dn + ')"><h3 style="display:flex;justify-content:space-between">Сегодня · День ' + dn + ' <span class="muted" style="font-weight:600">★ ' + dayStars(dn) + ' из ' + ME.mods.length + '</span></h3>' + modsHtml(dn, true) + '<div style="margin-top:10px"><span class="btn sm">Открыть день ' + dn + ' →</span></div></div>';
+  }
+  h += '<div class="muted" style="margin:4px 0 8px;font-weight:700;color:#0f2a4f">Все дни <span style="font-weight:400">· в клетке — сколько звёзд из ' + ME.mods.length + '</span></div><div class="days">';
+  for (var d = 1; d <= ME.days; d++) {
+    var open = d <= dn, s = open ? dayStars(d) : 0, cls = open ? (s >= ME.mods.length ? 'done' : (d === dn ? 'today' : '')) : 'lock';
+    var when = !open && d <= dn + 2 ? dm(addDays(ME.start, d - 1)) : '';
+    h += '<div class="d ' + cls + '"' + (open ? ' onclick="openDay(' + d + ')"' : '') + '><b>' + d + '</b>' + (open ? '<span class="st">★' + s + '/' + ME.mods.length + '</span>' : '🔒' + (when ? ' ' + when : '')) + '</div>';
+  }
+  h += '</div><div class="muted" style="margin-top:8px;font-size:11.5px">Новый день — в полночь. Прошлые дни открыты, можно догнать. Звёздочка — ' + ME.need + ' ' + plural(ME.need, 'прохождение', 'прохождения', 'прохождений') + ' с результатом от ' + ME.min.vocab + ' из ' + ME.total.vocab + ' (чтение — от ' + ME.min.reading + ' из ' + ME.total.reading + ').</div>';
+  $('homeBody').innerHTML = h;
+}
+function addDays(iso, n) { var d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function modsHtml(day, compact) {
+  return ME.mods.map(function(m) {
+    var p = prog(day, m), tot = ME.total[m], sub = (m === 'vocab' ? 'слова дня · тест ' + tot + ' вопроса' : m === 'reading' ? 'текст + ' + tot + ' вопросов' : tot + ' вопроса') + ' · ' + (p.t ? 'пройдено ' + p.p + ' из ' + ME.need + (p.b ? ' · лучший ' + p.b : '') : 'ещё не начинал(а)');
+    return '<div class="mod"' + (compact ? '' : ' onclick="openMod(\'' + m + '\')"') + '><span class="ic">' + ICON[m] + '</span><div><b>' + esc(ME.modNames[m]) + '</b><small>' + esc(sub) + '</small></div><span class="st' + (p.s ? ' on' : '') + '">' + (p.s ? '★' : p.p + '/' + ME.need) + '</span></div>';
+  }).join('');
+}
+/* ---------- день ---------- */
+function openDay(day) {
+  CUR.day = day; $('dayBody').innerHTML = '<div class="spin"></div>'; $('dayT').textContent = 'ОЦ «Планета» · ' + ME.trackName; $('dayH').textContent = 'День ' + day; $('daySub').textContent = ''; show('scrDay');
+  loadDay(day).then(function() { renderDay(); }).catch(function(e) { $('dayBody').innerHTML = '<div class="err">' + esc(e.message || 'Не удалось загрузить день.') + '</div><div style="margin-top:12px"><button class="btn ghost" onclick="openDay(' + day + ')">Повторить</button></div>'; });
+}
+function loadDay(day) {
+  if (DAYS[day]) return Promise.resolve(DAYS[day]);
+  var key = 'olimp_day_' + ME.track + '_' + day + '_' + (ME.matVer || ''), c = ls(key); if (c) { try { DAYS[day] = JSON.parse(c); return Promise.resolve(DAYS[day]); } catch (e) {} }
+  return api({ op: 'day', day: day }).then(function(r) { if (!r.ok) throw new Error(r.text || 'Ошибка.'); DAYS[day] = r.mods; ls(key, JSON.stringify(r.mods)); return r.mods; });
+}
+function renderDay() {
+  var day = CUR.day, M = DAYS[day]; if (!M) return;
+  var v = M.vocab, span = v && v.words && v.words.length ? 'слова ' + v.words[0].n + '–' + v.words[v.words.length - 1].n : '';
+  $('daySub').textContent = (span ? span + ' · ' : '') + '★ ' + dayStars(day) + ' из ' + ME.mods.length;
+  $('dayBody').innerHTML = '<div class="card" style="padding:10px 14px">' + modsHtml(day, false) + '</div><div class="muted">Нажмите задание. У «Слов» сначала карточки «Учить», потом тест. Результат от ' + ME.min.vocab + ' из ' + ME.total.vocab + ' засчитывается; ' + ME.need + ' засчитанных — звёздочка.</div>';
+}
+function openMod(m) {
+  CUR.mod = m; var day = CUR.day, M = DAYS[day]; if (!M || !M[m]) { toast('Это задание ещё не загружено.'); return; }
+  if (m === 'vocab') { var lk = learnedKey(day), done = Number(ls(lk) || 0) >= M.vocab.words.length; if (!done) { startLearn(); return; } }
+  startTest(m);
+}
+/* ---------- учить (карточки слов) ---------- */
+function learnedKey(day) { return 'olimp_learn_' + ME.track + '_' + day; }
+function startLearn() {
+  var day = CUR.day, words = DAYS[day].vocab.words.slice();
+  LEARN = { day: day, queue: words.slice(), total: words.length, done: 0, i: 0 };
+  $('learnT').textContent = 'День ' + day + ' · слова ' + words[0].n + '–' + words[words.length - 1].n; show('scrLearn'); renderLearn();
+}
+function renderLearn() {
+  var L = LEARN, w = L.queue[0];
+  $('learnH').textContent = '📖 Учить · ' + Math.min(L.done + 1, L.total) + ' из ' + L.total;
+  if (!w) {
+    ls(learnedKey(L.day), String(L.total));
+    $('learnBody').innerHTML = '<div class="card" style="text-align:center"><div class="starbig">🎉</div><h3>Все ' + L.total + ' слов пройдены!</h3><div class="muted">Теперь проверьте себя: тест на ' + ME.total.vocab + ' вопроса. Результат от ' + ME.min.vocab + ' засчитывается.</div><div style="margin-top:12px"><button class="btn ok" onclick="startTest(\'vocab\')">✍️ Начать тест</button></div><div style="margin-top:8px"><button class="btn ghost" onclick="startLearn()">Повторить карточки</button></div></div>';
+    return;
+  }
+  var pct = Math.round(L.done / L.total * 100);
+  $('learnBody').innerHTML = '<div class="bar"><i style="width:' + pct + '%"></i></div><div class="fc"><div class="w">' + esc(w.w) + '</div><div class="sp" onclick="say(' + JSON.stringify(w.w) + ')">🔊 слушать</div><div class="def">' + esc(w.d) + '</div><div class="ru">' + esc(w.ru) + '</div></div><div class="two"><button class="btn ghost" onclick="learnNext(false)">↻ Ещё раз</button><button class="btn ok" onclick="learnNext(true)">✓ Знаю</button></div><div class="muted" style="text-align:center;margin-top:12px">«Ещё раз» — слово вернётся в конце. Когда все отмечены «Знаю», откроется тест.</div>';
+}
+function learnNext(know) { var L = LEARN, w = L.queue.shift(); if (know) L.done++; else L.queue.push(w); renderLearn(); }
+function say(w) { try { var u = new SpeechSynthesisUtterance(w); u.lang = 'en-US'; u.rate = .9; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) { toast('Озвучка на этом телефоне недоступна'); } }
+/* ---------- тест ---------- */
+function vocabQuestions(words) {
+  var pool = shuffle(words.slice()).slice(0, ME.total.vocab), qs = [];
+  pool.forEach(function(w, i) {
+    var others = shuffle(words.filter(function(x) { return x.n !== w.n; })).slice(0, 3), type = i % 3, opts, q, correct;
+    if (type === 0) { q = 'Что значит <b>' + esc(w.w) + '</b>?'; correct = w.ru; opts = others.map(function(x) { return x.ru; }); }
+    else if (type === 1) { q = 'Какое слово значит «' + esc(w.ru) + '»?'; correct = w.w; opts = others.map(function(x) { return x.w; }); }
+    else { q = 'Which word means: <i>' + esc(w.d) + '</i>?'; correct = w.w; opts = others.map(function(x) { return x.w; }); }
+    var all = shuffle(opts.concat([correct]));
+    qs.push({ q: q, o: all, a: all.indexOf(correct), en: w.w + ' — ' + w.d, ru: w.w + ' — ' + w.ru, n: w.n, say: w.w });
+  });
+  return qs;
+}
+function startTest(m) {
+  var day = CUR.day, M = DAYS[day][m]; if (!M) return;
+  CUR.mod = m;
+  var items;
+  if (m === 'vocab') items = vocabQuestions(M.words);
+  else { items = shuffle(M.items.slice()).map(function(it, i) { return Object.assign({}, it, { n: i + 1 }); }); if (m === 'reading') items = M.items.map(function(it, i) { return Object.assign({}, it, { n: i + 1 }); }); }
+  T = { mod: m, day: day, items: items, i: 0, score: 0, answered: false, text: m === 'reading' ? M.text : '', title: m === 'reading' ? M.title : '', showText: true };
+  $('testT').textContent = 'День ' + day + ' · ' + ME.modNames[m]; show('scrTest'); renderQ();
+}
+function quitTest() { if (T && T.i > 0 && T.i < T.items.length && !confirm('Выйти из теста? Этот результат не засчитается.')) return; T = null; go('day'); }
+function renderQ() {
+  var it = T.items[T.i], n = T.i + 1, tot = T.items.length, m = T.mod;
+  $('testH').innerHTML = 'Вопрос ' + n + ' из ' + tot + ' · верно ' + T.score;
+  var stem = m === 'paraphrase' ? '<span class="orig">' + esc(it.q) + '</span>' + (ME.track === 'adults' ? 'Which sentence preserves the meaning most accurately?' : 'Which sentence has the same meaning?') : (m === 'synonyms' || m === 'vocab' ? it.q : esc(it.q));
+  var h = '<div class="bar"><i style="width:' + Math.round(T.i / tot * 100) + '%"></i></div>';
+  if (m === 'reading') h += '<div class="muted" style="display:flex;justify-content:space-between;align-items:center;margin:6px 0"><b style="color:#0f2a4f">' + esc(T.title) + '</b><span style="color:#2563eb;cursor:pointer" onclick="T.showText=!T.showText;renderQ()">' + (T.showText ? 'скрыть текст' : 'показать текст') + '</span></div><div class="txt' + (T.showText ? '' : ' hid') + '">' + esc(T.text) + '</div>';
+  h += '<div class="q">' + stem + (it.say ? ' <span style="font-weight:400;color:#2563eb;cursor:pointer;font-size:14px" onclick="say(' + JSON.stringify(it.say) + ')">🔊</span>' : '') + '</div>';
+  it.o.forEach(function(o, k) { h += '<button class="opt" id="opt' + k + '" onclick="answer(' + k + ')">' + esc(o) + '</button>'; });
+  h += '<div id="exBox"></div><div class="flag" onclick="report()">⚑ Ошибка в вопросе?</div>';
+  $('testBody').innerHTML = h; T.answered = false; window.scrollTo(0, 0);
+}
+function answer(k) {
+  if (T.answered) return; T.answered = true;
+  var it = T.items[T.i], ok = k === it.a; if (ok) T.score++;
+  it.o.forEach(function(o, j) { var b = $('opt' + j); b.disabled = true; if (j === it.a) b.classList.add('ok'); if (j === k && !ok) b.classList.add('no'); });
+  $('exBox').innerHTML = '<div class="ex"><b style="color:' + (ok ? '#166534' : '#991b1b') + '">' + (ok ? '✓ Верно!' : '✗ Неверно. Правильно: ' + esc(it.o[it.a])) + '</b><div style="margin-top:4px">' + esc(it.ru) + '</div><div class="en">' + esc(it.en) + '</div></div><button class="btn" onclick="nextQ()">' + (T.i + 1 < T.items.length ? 'Дальше →' : 'Результат') + '</button>';
+  $('testH').innerHTML = 'Вопрос ' + (T.i + 1) + ' из ' + T.items.length + ' · верно ' + T.score;
+  setTimeout(function() { try { $('exBox').scrollIntoView({ behavior: 'smooth', block: 'end' }); } catch (e) {} }, 50);
+}
+function nextQ() { T.i++; if (T.i < T.items.length) renderQ(); else finishTest(); }
+function finishTest() {
+  var m = T.mod, day = T.day, score = T.score, total = T.items.length, min = ME.min[m], counted = score >= min;
+  var rec = { op: 'pass', mod: m, day: day, score: score, total: total, at: new Date().toISOString() };
+  T = null;
+  $('resT').textContent = 'День ' + day + ' · ' + ME.modNames[m];
+  var p = prog(day, m), guessP = p.p + (counted ? 1 : 0), guessStar = !!p.s || guessP >= ME.need;
+  $('resBody').innerHTML = resHtml(score, total, counted, min, guessP, guessStar, false, m, day, 'Сохраняем результат…');
+  show('scrRes');
+  api(rec).then(function(r) {
+    if (!r.ok) { if (r.code === 'locked') { toast(r.text); } else queue(rec); $('resBody').innerHTML = resHtml(score, total, counted, min, guessP, guessStar, false, m, day, r.code === 'locked' ? r.text : 'Нет связи — результат сохраним позже.'); return; }
+    ME.progress[day + '|' + m] = { p: r.passes, t: r.tries, b: r.best, l: score, s: r.star ? '★' : '' }; ME.stars = r.stars;
+    $('resBody').innerHTML = resHtml(score, total, counted, min, r.passes, r.star, r.newStar, m, day, '');
+  }).catch(function() { queue(rec); $('resBody').innerHTML = resHtml(score, total, counted, min, guessP, guessStar, false, m, day, 'Нет связи — результат сохраним, когда появится интернет.'); });
+}
+function resHtml(score, total, counted, min, passes, star, newStar, m, day, note) {
+  var stars = ''; for (var i = 0; i < ME.need; i++) stars += i < Math.min(passes, ME.need) ? '★' : '<i>☆</i>';
+  return '<div class="card" style="border:2px solid ' + (counted ? '#86efac' : '#fecaca') + '"><div class="res">' + (newStar ? '<div class="starbig">⭐</div><div class="pill">Звёздочка за «' + esc(ME.modNames[m]) + '» дня ' + day + '!</div>' : '') +
+    '<div class="big' + (counted ? '' : ' no') + '">' + score + ' / ' + total + '</div><div class="stars">' + stars + '</div><div class="muted">' + (counted ? 'Засчитано · прохождение ' + Math.min(passes, ME.need) + ' из ' + ME.need : '<b style="color:#991b1b">Не засчитано.</b> Нужно не меньше ' + min + ' из ' + total + '. Повторите и попробуйте снова.') + (star && !newStar ? ' · звёздочка уже есть' : '') + '</div>' +
+    (note ? '<div class="muted" style="margin-top:6px;color:#92400e">' + esc(note) + '</div>' : '') + '</div>' +
+    '<button class="btn" onclick="startTest(\'' + m + '\')" style="margin-top:6px">Пройти ещё раз</button>' + (m === 'vocab' ? '<button class="btn ghost" onclick="startLearn()" style="margin-top:8px">📖 Повторить слова</button>' : '') + '</div>' +
+    '<button class="btn ghost" onclick="go(\'day\')">К заданиям дня ' + day + '</button><div style="height:8px"></div><button class="btn ghost" onclick="go(\'home\')">На главную</button>';
+}
+/* ---------- очередь результатов без связи ---------- */
+function queue(rec) { var q = []; try { q = JSON.parse(ls('olimp_q') || '[]'); } catch (e) {} q.push(rec); ls('olimp_q', JSON.stringify(q.slice(-50))); }
+function flushQueue() {
+  var q = []; try { q = JSON.parse(ls('olimp_q') || '[]'); } catch (e) {} if (!q.length) return;
+  var rec = q.shift(); ls('olimp_q', JSON.stringify(q));
+  api(rec).then(function(r) { if (r.ok && ME) { ME.progress[rec.day + '|' + rec.mod] = { p: r.passes, t: r.tries, b: r.best, l: rec.score, s: r.star ? '★' : '' }; ME.stars = r.stars; } if (q.length) flushQueue(); }).catch(function() { queue(rec); });
+}
+/* ---------- ошибка в вопросе ---------- */
+var REP = null;
+function report() { if (!T) return; REP = { mod: T.mod, day: T.day, n: T.items[T.i].n, q: String(T.items[T.i].q || '').replace(/<[^>]+>/g, '').slice(0, 300) }; $('popT').value = ''; $('pop').classList.add('on'); }
+function sendReport() { var t = String($('popT').value || '').trim(); if (!t) { toast('Напишите, что не так.'); return; } $('pop').classList.remove('on'); api(Object.assign({ op: 'report', text: t }, REP), true).then(function(r) { toast(r.ok ? 'Спасибо! Учитель проверит.' : (r.text || 'Не отправилось.')); }).catch(function() { toast('Нет связи — попробуйте позже.'); }); }
+window.addEventListener('online', flushQueue);
+start();
+</script>
+</body>
+</html>
