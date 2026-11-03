@@ -120,7 +120,7 @@ body{min-height:100vh;display:flex;flex-direction:column}
 <div class="pop" id="pop"><div class="bx"><h3 style="margin:0 0 8px">Что не так в этом вопросе?</h3><textarea id="popT" placeholder="Например: правильный ответ другой, опечатка в слове…"></textarea><div class="two" style="margin-top:10px"><button class="btn ghost" onclick="$('pop').classList.remove('on')">Отмена</button><button class="btn" onclick="sendReport()">Отправить</button></div></div></div>
 <div class="toast" id="toast"></div>
 <script>
-/* Планета · Олимпиада — сайт подготовки (сборка 699). Запросы к кабинету — без cookies (анонимно), как у страницы договора. */
+/* Планета · Олимпиада — сайт подготовки (сборка 699; 702 — озвучка). Запросы к кабинету — без cookies (анонимно), как у страницы договора. */
 var API = 'https://script.google.com/macros/s/AKfycby0O1aycallOk5fTZUa5L_CG432hMARssdKtmOHsJzMaqOHvFUkYrYUCQKeqyTxCW8rcQ/exec';
 var Q = new URLSearchParams(location.search);
 var K = (function() { var inj = '__OLIMP_K__'; if (/^[0-9a-f]{16}$/i.test(inj)) return inj.toLowerCase(); return (String(Q.get('k') || '').match(/^[0-9a-f]{16}/i) || [''])[0].toLowerCase(); })();   /* ключ: из адреса (GitHub Pages) или подставленный кабинетом (страница в песочнице Google не видит адрес) */
@@ -248,10 +248,20 @@ function renderLearn() {
     return;
   }
   var pct = Math.round(L.done / L.total * 100);
-  $('learnBody').innerHTML = '<div class="bar"><i style="width:' + pct + '%"></i></div><div class="fc"><div class="w">' + esc(w.w) + '</div><div class="sp" onclick="say(' + JSON.stringify(w.w) + ')">🔊 слушать</div><div class="def">' + esc(w.d) + '</div><div class="ru">' + esc(w.ru) + '</div></div><div class="two"><button class="btn ghost" onclick="learnNext(false)">↻ Ещё раз</button><button class="btn ok" onclick="learnNext(true)">✓ Знаю</button></div><div class="muted" style="text-align:center;margin-top:12px">«Ещё раз» — слово вернётся в конце. Когда все отмечены «Знаю», откроется тест.</div>';
+  $('learnBody').innerHTML = '<div class="bar"><i style="width:' + pct + '%"></i></div><div class="fc"><div class="w">' + esc(w.w) + '</div><div class="sp" onclick="say(' + esc(JSON.stringify(w.w)) + ')">🔊 слушать</div><div class="def">' + esc(w.d) + '</div><div class="ru">' + esc(w.ru) + '</div></div><div class="two"><button class="btn ghost" onclick="learnNext(false)">↻ Ещё раз</button><button class="btn ok" onclick="learnNext(true)">✓ Знаю</button></div><div class="muted" style="text-align:center;margin-top:12px">«Ещё раз» — слово вернётся в конце. Когда все отмечены «Знаю», откроется тест.</div>';
 }
 function learnNext(know) { var L = LEARN, w = L.queue.shift(); if (know) L.done++; else L.queue.push(w); renderLearn(); }
-function say(w) { try { var u = new SpeechSynthesisUtterance(w); u.lang = 'en-US'; u.rate = .9; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) { toast('Озвучка на этом телефоне недоступна'); } }
+var __say = null;   /* ссылка на фразу — иначе Safari может «потерять» её до конца озвучки */
+function say(w) {
+  try {
+    if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) { toast('Озвучка на этом телефоне недоступна'); return; }
+    var s = window.speechSynthesis, u = new SpeechSynthesisUtterance(w), started = false; u.lang = 'en-US'; u.rate = 0.9; u.volume = 1; __say = u;
+    u.onstart = function() { started = true; }; u.onend = function() { started = true; };
+    u.onerror = function(e) { var c = e && e.error; if (c && c !== 'interrupted' && c !== 'canceled') toast('Озвучка не сработала (' + c + ')'); };
+    var go = function() { s.speak(u); setTimeout(function() { if (!started && !s.speaking) toast('Нет звука? Проверьте громкость и беззвучный режим.'); }, 1500); };
+    if (s.speaking || s.pending) { s.cancel(); setTimeout(go, 80); } else go();   /* iPhone: cancel() сразу перед speak() глушит новую фразу — отменяем только если что-то звучит */
+  } catch (e) { toast('Озвучка на этом телефоне недоступна'); }
+}
 /* ---------- тест ---------- */
 function vocabQuestions(words) {
   var pool = shuffle(words.slice()).slice(0, ME.total.vocab), qs = [];
@@ -281,7 +291,7 @@ function renderQ() {
   var stem = m === 'paraphrase' ? '<span class="orig">' + esc(it.q) + '</span>' + (ME.track === 'adults' ? 'Which sentence preserves the meaning most accurately?' : 'Which sentence has the same meaning?') : (m === 'synonyms' || m === 'vocab' ? it.q : esc(it.q));
   var h = '<div class="bar"><i style="width:' + Math.round(T.i / tot * 100) + '%"></i></div>';
   if (m === 'reading') h += '<div class="muted" style="display:flex;justify-content:space-between;align-items:center;margin:6px 0"><b style="color:#0f2a4f">' + esc(T.title) + '</b><span style="color:#2563eb;cursor:pointer" onclick="T.showText=!T.showText;renderQ()">' + (T.showText ? 'скрыть текст' : 'показать текст') + '</span></div><div class="txt' + (T.showText ? '' : ' hid') + '">' + esc(T.text) + '</div>';
-  h += '<div class="q">' + stem + (it.say ? ' <span style="font-weight:400;color:#2563eb;cursor:pointer;font-size:14px" onclick="say(' + JSON.stringify(it.say) + ')">🔊</span>' : '') + '</div>';
+  h += '<div class="q">' + stem + (it.say ? ' <span style="font-weight:400;color:#2563eb;cursor:pointer;font-size:14px" onclick="say(' + esc(JSON.stringify(it.say)) + ')">🔊</span>' : '') + '</div>';
   it.o.forEach(function(o, k) { h += '<button class="opt" id="opt' + k + '" onclick="answer(' + k + ')">' + esc(o) + '</button>'; });
   h += '<div id="exBox"></div><div class="flag" onclick="report()">⚑ Ошибка в вопросе?</div>';
   $('testBody').innerHTML = h; T.answered = false; window.scrollTo(0, 0);
