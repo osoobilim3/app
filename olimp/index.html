@@ -123,7 +123,7 @@ body{min-height:100vh;display:flex;flex-direction:column}
 /* Планета · Олимпиада — сайт подготовки (сборка 699). Запросы к кабинету — без cookies (анонимно), как у страницы договора. */
 var API = 'https://script.google.com/macros/s/AKfycby0O1aycallOk5fTZUa5L_CG432hMARssdKtmOHsJzMaqOHvFUkYrYUCQKeqyTxCW8rcQ/exec';
 var Q = new URLSearchParams(location.search);
-var K = (String(Q.get('k') || '').match(/^[0-9a-f]{16}/i) || [''])[0].toLowerCase();
+var K = (function() { var inj = '__OLIMP_K__'; if (/^[0-9a-f]{16}$/i.test(inj)) return inj.toLowerCase(); return (String(Q.get('k') || '').match(/^[0-9a-f]{16}/i) || [''])[0].toLowerCase(); })();   /* ключ: из адреса (GitHub Pages) или подставленный кабинетом (страница в песочнице Google не видит адрес) */
 var ICON = { vocab: '📖', colloc: '🔗', synonyms: '🟰', paraphrase: '✍️', reading: '📰' };
 var ME = null, DAYS = {}, CUR = { day: 0, mod: '' }, T = null, LEARN = null, HIST = [];
 function $(i) { return document.getElementById(i); }
@@ -135,10 +135,11 @@ function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floo
 function dm(iso) { return iso ? String(iso).split('-').reverse().slice(0, 2).join('.') : ''; }
 function plural(n, a, b, c) { n = Math.abs(n) % 100; var m = n % 10; if (n > 10 && n < 20) return c; if (m > 1 && m < 5) return b; if (m === 1) return a; return c; }
 if (K) ls('olimp_k', K); else K = ls('olimp_k') || '';
-var DEV = ls('olimp_dev'); if (!DEV) { DEV = 'd' + Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10); ls('olimp_dev', DEV); }
+function fp() { var u = navigator.userAgent + '|' + (screen.width + 'x' + screen.height + 'x' + (window.devicePixelRatio || 1)) + '|' + (navigator.language || '') + '|' + (Intl.DateTimeFormat().resolvedOptions().timeZone || '') + '|' + (navigator.hardwareConcurrency || '') + '|' + (navigator.maxTouchPoints || ''); var h = 5381; for (var i = 0; i < u.length; i++) h = ((h * 33) ^ u.charCodeAt(i)) >>> 0; return 'f' + h.toString(36); }
+var DEV = ls('olimp_dev'); if (!DEV) { DEV = fp(); ls('olimp_dev', DEV); }   /* если хранилище не сохраняется — тот же отпечаток устройства в следующий раз */
 function devName() { var u = navigator.userAgent; return (/iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) ? 'iPad' : /Android/.test(u) ? 'Android' : /Windows/.test(u) ? 'Windows' : /Mac/.test(u) ? 'Mac' : 'телефон') + (/WhatsApp/.test(u) ? ' · WhatsApp' : ''); }
 function api(params, post) {
-  var p = Object.assign({ page: 'olimp_api', k: K, dev: DEV }, params);
+  var p = Object.assign({ page: 'olimp_api', k: K, dev: DEV }, params); if (!p.k) p.k = K;
   var ctl = typeof AbortController === 'function' ? new AbortController() : null; if (ctl) setTimeout(function() { ctl.abort(); }, 45000);
   var req = post ? fetch(API + '?page=olimp_api', { method: 'POST', body: JSON.stringify(p), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, credentials: 'omit', redirect: 'follow', signal: ctl ? ctl.signal : undefined })
                  : fetch(API + '?' + new URLSearchParams(p).toString(), { method: 'GET', credentials: 'omit', redirect: 'follow', cache: 'no-store', signal: ctl ? ctl.signal : undefined });
@@ -217,7 +218,7 @@ function openDay(day) {
 }
 function loadDay(day) {
   if (DAYS[day]) return Promise.resolve(DAYS[day]);
-  var key = 'olimp_day_' + ME.track + '_' + day + '_' + (ME.matVer || ''), c = ls(key); if (c) { try { DAYS[day] = JSON.parse(c); return Promise.resolve(DAYS[day]); } catch (e) {} }
+  var key = 'olimp_day_' + ME.track + '_' + day + '_' + (ME.matVer || ''), c = ls(key);   /* материал общий для возраста — ключ без ученика */ if (c) { try { DAYS[day] = JSON.parse(c); return Promise.resolve(DAYS[day]); } catch (e) {} }
   return api({ op: 'day', day: day }).then(function(r) { if (!r.ok) throw new Error(r.text || 'Ошибка.'); DAYS[day] = r.mods; ls(key, JSON.stringify(r.mods)); return r.mods; });
 }
 function renderDay() {
@@ -232,7 +233,7 @@ function openMod(m) {
   startTest(m);
 }
 /* ---------- учить (карточки слов) ---------- */
-function learnedKey(day) { return 'olimp_learn_' + ME.track + '_' + day; }
+function learnedKey(day) { return 'olimp_learn_' + K + '_' + ME.track + '_' + day; }
 function startLearn() {
   var day = CUR.day, words = DAYS[day].vocab.words.slice();
   LEARN = { day: day, queue: words.slice(), total: words.length, done: 0, i: 0 };
@@ -255,7 +256,7 @@ function say(w) { try { var u = new SpeechSynthesisUtterance(w); u.lang = 'en-US
 function vocabQuestions(words) {
   var pool = shuffle(words.slice()).slice(0, ME.total.vocab), qs = [];
   pool.forEach(function(w, i) {
-    var others = shuffle(words.filter(function(x) { return x.n !== w.n; })).slice(0, 3), type = i % 3, opts, q, correct;
+    var others = shuffle(words.filter(function(x) { return x.n !== w.n && x.ru.toLowerCase() !== w.ru.toLowerCase() && x.w.toLowerCase() !== w.w.toLowerCase(); })).slice(0, 3), type = i % 3, opts, q, correct;
     if (type === 0) { q = 'Что значит <b>' + esc(w.w) + '</b>?'; correct = w.ru; opts = others.map(function(x) { return x.ru; }); }
     else if (type === 1) { q = 'Какое слово значит «' + esc(w.ru) + '»?'; correct = w.w; opts = others.map(function(x) { return x.w; }); }
     else { q = 'Which word means: <i>' + esc(w.d) + '</i>?'; correct = w.w; opts = others.map(function(x) { return x.w; }); }
@@ -296,7 +297,7 @@ function answer(k) {
 function nextQ() { T.i++; if (T.i < T.items.length) renderQ(); else finishTest(); }
 function finishTest() {
   var m = T.mod, day = T.day, score = T.score, total = T.items.length, min = ME.min[m], counted = score >= min;
-  var rec = { op: 'pass', mod: m, day: day, score: score, total: total, at: new Date().toISOString() };
+  var rec = { op: 'pass', k: K, mod: m, day: day, score: score, total: total, at: new Date().toISOString() };
   T = null;
   $('resT').textContent = 'День ' + day + ' · ' + ME.modNames[m];
   var p = prog(day, m), guessP = p.p + (counted ? 1 : 0), guessStar = !!p.s || guessP >= ME.need;
@@ -317,11 +318,19 @@ function resHtml(score, total, counted, min, passes, star, newStar, m, day, note
     '<button class="btn ghost" onclick="go(\'day\')">К заданиям дня ' + day + '</button><div style="height:8px"></div><button class="btn ghost" onclick="go(\'home\')">На главную</button>';
 }
 /* ---------- очередь результатов без связи ---------- */
-function queue(rec) { var q = []; try { q = JSON.parse(ls('olimp_q') || '[]'); } catch (e) {} q.push(rec); ls('olimp_q', JSON.stringify(q.slice(-50))); }
+function queue(rec) { var q = []; try { q = JSON.parse(ls('olimp_q') || '[]'); } catch (e) {} if (!q.some(function(x) { return x.at === rec.at && x.k === rec.k; })) q.push(rec); ls('olimp_q', JSON.stringify(q.slice(-50))); }
+var FLUSHING = false;
 function flushQueue() {
-  var q = []; try { q = JSON.parse(ls('olimp_q') || '[]'); } catch (e) {} if (!q.length) return;
-  var rec = q.shift(); ls('olimp_q', JSON.stringify(q));
-  api(rec).then(function(r) { if (r.ok && ME) { ME.progress[rec.day + '|' + rec.mod] = { p: r.passes, t: r.tries, b: r.best, l: rec.score, s: r.star ? '★' : '' }; ME.stars = r.stars; } if (q.length) flushQueue(); }).catch(function() { queue(rec); });
+  if (FLUSHING) return; var q = []; try { q = JSON.parse(ls('olimp_q') || '[]'); } catch (e) {} if (!q.length) return;
+  var rec = q[0]; FLUSHING = true;
+  api(rec).then(function(r) {
+    FLUSHING = false;
+    var drop = r.ok || r.code === 'locked' || r.code === 'baddays' || r.code === 'badkey' || (r.ok === false && !r.code && /Неизвестное задание/.test(r.text || ''));
+    if (!drop) return;   /* сервер занят, нет доступа, нужен код — результат остаётся в очереди до следующего раза */
+    var q2 = []; try { q2 = JSON.parse(ls('olimp_q') || '[]'); } catch (e) {} ls('olimp_q', JSON.stringify(q2.filter(function(x) { return !(x.at === rec.at && x.k === rec.k); })));
+    if (r.ok && ME && rec.k === K) { ME.progress[rec.day + '|' + rec.mod] = { p: r.passes, t: r.tries, b: r.best, l: rec.score, s: r.star ? '★' : '' }; ME.stars = r.stars; }
+    flushQueue();
+  }).catch(function() { FLUSHING = false; });
 }
 /* ---------- ошибка в вопросе ---------- */
 var REP = null;
