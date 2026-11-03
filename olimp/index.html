@@ -102,6 +102,8 @@ body{min-height:100vh;display:flex;flex-direction:column}
 .rtab{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}.rtab td{padding:6px 4px;border-bottom:1px solid #eef2f7}.rtab td:last-child{text-align:right;font-weight:800;white-space:nowrap}
 .grid70{display:grid;grid-template-columns:repeat(10,1fr);gap:5px}.grid70 span{display:block;text-align:center;font-size:12px;font-weight:700;padding:7px 0;border-radius:8px;background:#f1f5f9;color:#64748b;cursor:pointer}.grid70 span.a{background:#dbeafe;color:#1d4ed8}.grid70 span.cur{outline:2px solid #2563eb}
 .fc .ex-s{font-size:13.5px;color:#475569;margin-top:12px;font-style:italic}.fc .ex-s b{color:#0f2a4f}
+.testbar{background:#fef3c7;border-bottom:1px solid #fde68a;color:#92400e;padding:calc(8px + env(safe-area-inset-top,0px)) 14px 9px;font-size:13px;font-weight:600}
+.lvls{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.lvls span{background:#fff;border:1.5px solid #fcd34d;border-radius:999px;padding:5px 12px;font-size:13px;color:#92400e;font-weight:700;cursor:pointer}.lvls span.on{background:#f59e0b;color:#fff;border-color:#f59e0b}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0f2a4f;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;display:none;z-index:10;max-width:90%}
 </style>
 </head>
@@ -121,7 +123,7 @@ body{min-height:100vh;display:flex;flex-direction:column}
   <div class="warn">Ссылка личная: работает на телефоне ученика и ещё на одном-двух устройствах. Если переслать её другому — у него не откроется.</div>
  </div><div class="foot">Автор и разработчик системы — Базарматов Б. У.</div></div>
 <!-- главный -->
-<div class="scr" id="scrHome"><div class="top"><div class="t" id="homeT"></div><h1 id="homeH"></h1><div class="sub" id="homeS"></div></div>
+<div class="scr" id="scrHome"><div class="testbar" id="testBar" style="display:none"></div><div class="top"><div class="t" id="homeT"></div><h1 id="homeH"></h1><div class="sub" id="homeS"></div></div>
  <div class="pad" id="homeBody"></div><div class="foot">Автор и разработчик системы — Базарматов Б. У.</div></div>
 <!-- день -->
 <div class="scr" id="scrDay"><div class="top"><a class="back" onclick="go('home')">← Все дни</a><div class="t" id="dayT"></div><h1 id="dayH"></h1><div class="sub" id="daySub"></div></div>
@@ -142,10 +144,10 @@ body{min-height:100vh;display:flex;flex-direction:column}
  <div class="pad" id="exBody"></div></div>
 <!-- пробный экзамен: результат -->
 <div class="scr" id="scrExamRes"><div class="top"><div class="t" id="exrT"></div><h1>Результат</h1></div><div class="pad" id="exrBody"></div><div class="foot">Автор и разработчик системы — Базарматов Б. У.</div></div>
-<div class="pop" id="pop"><div class="bx"><h3 style="margin:0 0 8px">Что не так в этом вопросе?</h3><textarea id="popT" placeholder="Например: правильный ответ другой, опечатка в слове…"></textarea><div class="two" style="margin-top:10px"><button class="btn ghost" onclick="$('pop').classList.remove('on')">Отмена</button><button class="btn" onclick="sendReport()">Отправить</button></div></div></div>
+<div class="pop" id="pop"><div class="bx"><h3 style="margin:0 0 8px">Что не так в этом вопросе?</h3><input id="popWho" placeholder="Ваше имя (необязательно)" style="display:none;width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:8px;font-family:inherit;font-size:14px;margin-bottom:8px"><textarea id="popT" placeholder="Например: правильный ответ другой, опечатка в слове…"></textarea><div class="two" style="margin-top:10px"><button class="btn ghost" onclick="$('pop').classList.remove('on')">Отмена</button><button class="btn" onclick="sendReport()">Отправить</button></div></div></div>
 <div class="toast" id="toast"></div>
 <script>
-/* Планета · Олимпиада — сайт подготовки (сборка 699; 702 — формат контрольной ELITE: пять уровней, тесты 15/10/10/15/10, чтение с True/False/Not Given и сопоставлением, пробный экзамен 70 вопросов с таймером). Запросы к кабинету — без cookies (анонимно), как у страницы договора. */
+/* Планета · Олимпиада — сайт подготовки (сборка 699; 703 — тестовая ссылка для учителей: любой уровень, без сохранения; 702 — формат контрольной ELITE: пять уровней, тесты 15/10/10/15/10, чтение с True/False/Not Given и сопоставлением, пробный экзамен 70 вопросов с таймером). Запросы к кабинету — без cookies (анонимно), как у страницы договора. */
 var API = 'https://script.google.com/macros/s/AKfycby0O1aycallOk5fTZUa5L_CG432hMARssdKtmOHsJzMaqOHvFUkYrYUCQKeqyTxCW8rcQ/exec';
 var Q = new URLSearchParams(location.search);
 var K = (function() { var inj = '__OLIMP_K__'; if (/^[0-9a-f]{16}$/i.test(inj)) return inj.toLowerCase(); return (String(Q.get('k') || '').match(/^[0-9a-f]{16}/i) || [''])[0].toLowerCase(); })();   /* ключ: из адреса (GitHub Pages) или подставленный кабинетом (страница в песочнице Google не видит адрес) */
@@ -165,10 +167,11 @@ function norm(s) { return String(s || '').trim().toLowerCase(); }
 function mmss(ms) { if (ms < 0) ms = 0; var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), ss = s % 60; return (h ? h + ':' + ('0' + m).slice(-2) : m) + ':' + ('0' + ss).slice(-2); }
 if (K) ls('olimp_k', K); else K = ls('olimp_k') || '';
 function fp() { var u = navigator.userAgent + '|' + (screen.width + 'x' + screen.height + 'x' + (window.devicePixelRatio || 1)) + '|' + (navigator.language || '') + '|' + (Intl.DateTimeFormat().resolvedOptions().timeZone || '') + '|' + (navigator.hardwareConcurrency || '') + '|' + (navigator.maxTouchPoints || ''); var h = 5381; for (var i = 0; i < u.length; i++) h = ((h * 33) ^ u.charCodeAt(i)) >>> 0; return 'f' + h.toString(36); }
-var DEV = ls('olimp_dev'); if (!DEV) { DEV = fp(); ls('olimp_dev', DEV); }   /* если хранилище не сохраняется — тот же отпечаток устройства в следующий раз */
+var DEV = ls('olimp_dev'); if (!DEV) { DEV = fp(); ls('olimp_dev', DEV); }
+var TEST_LV = ls('olimp_test_lv') || '';   /* тестовая ссылка: выбранный уровень */   /* если хранилище не сохраняется — тот же отпечаток устройства в следующий раз */
 function devName() { var u = navigator.userAgent; return (/iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) ? 'iPad' : /Android/.test(u) ? 'Android' : /Windows/.test(u) ? 'Windows' : /Mac/.test(u) ? 'Mac' : 'телефон') + (/WhatsApp/.test(u) ? ' · WhatsApp' : ''); }
 function api(params, post) {
-  var p = Object.assign({ page: 'olimp_api', k: K, dev: DEV }, params); if (!p.k) p.k = K;
+  var p = Object.assign({ page: 'olimp_api', k: K, dev: DEV }, params); if (!p.k) p.k = K; if (TEST_LV && !p.lv) p.lv = TEST_LV;
   var ctl = typeof AbortController === 'function' ? new AbortController() : null; if (ctl) setTimeout(function() { ctl.abort(); }, 45000);
   var req = post ? fetch(API + '?page=olimp_api', { method: 'POST', body: JSON.stringify(p), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, credentials: 'omit', redirect: 'follow', signal: ctl ? ctl.signal : undefined })
                  : fetch(API + '?' + new URLSearchParams(p).toString(), { method: 'GET', credentials: 'omit', redirect: 'follow', cache: 'no-store', signal: ctl ? ctl.signal : undefined });
@@ -215,7 +218,7 @@ function prog(day, mod) { return (ME && ME.progress && ME.progress[day + '|' + m
 function dayStars(day) { var n = 0; ME.mods.forEach(function(m) { if (prog(day, m).s) n++; }); return n; }
 function daysLeft() { var a = new Date(ME.today + 'T00:00:00'), b = new Date(ME.eventDate + 'T00:00:00'); return Math.round((b - a) / 86400000); }
 function examOpen() { return !!(ME && ME.dayNo && ME.examFrom && ME.dayNo >= ME.examFrom); }
-function examKey(v) { return 'olimp_exam_' + K + '_' + v; }
+function examKey(v) { return 'olimp_exam_' + K + (ME && ME.test ? '_' + ME.track : '') + '_' + v; }
 function examSaved() { for (var v = 1; v <= (ME.examN || 3); v++) { var s = null; try { s = JSON.parse(ls(examKey(v)) || 'null'); } catch (e) {} if (s && s.endsAt && s.items) return s; } return null; }
 function examCard() {
   if (!examOpen()) { if (ME.examFrom && ME.examFrom <= ME.days) return '<div class="card" style="background:#f8fafc"><h3>🎓 Пробный экзамен</h3><div class="muted">Откроется в день ' + ME.examFrom + ' (' + esc(dm(addDays(ME.start, ME.examFrom - 1))) + '): 70 вопросов, ' + ME.examMin + ' минут, как на олимпиаде.</div></div>'; return ''; }
@@ -228,7 +231,27 @@ function examCard() {
   if (!saved && next && next > 1) h += '<div class="muted" style="text-align:center;margin-top:6px"><span style="text-decoration:underline;cursor:pointer" onclick="openExam(' + (next - 1) + ')">повторить вариант ' + (next - 1) + '</span></div>';
   return h + '</div>';
 }
+function setTestLevel(lv) {
+  if (!ME || !ME.test || lv === ME.track) return;
+  TEST_LV = lv; ls('olimp_test_lv', lv); DAYS = {}; EXM = {}; show('scrLoad');
+  api({ op: 'hello' }).then(function(r) { if (r.ok) { ME = r; renderHome(); show('scrHome'); return; } fail(r.code === 'closed' ? 'Ссылка выключена' : 'Не удалось открыть', r.text || 'Ошибка.'); }).catch(function() { fail('Нет связи', 'Проверьте интернет и попробуйте ещё раз.'); });
+}
+function renderHomeTest() {
+  var lv = ME.track, levels = ME.levels || ['g34', 'g56', 'g78', 'g910', 'g11'], names = ME.levelNames || {}, bar = $('testBar');
+  bar.style.display = 'block';
+  bar.innerHTML = '🧪 Тестовый просмотр для учителя — результаты не сохраняются<div class="lvls">' + levels.map(function(l) { return '<span class="' + (l === lv ? 'on' : '') + '" onclick="setTestLevel(\'' + l + '\')">' + esc(String(names[l] || l).replace(/ классы?$/, '')) + '</span>'; }).join('') + '</div>';
+  $('homeT').textContent = 'ОЦ «Планета» · Олимпиада ' + dm(ME.eventDate);
+  $('homeH').textContent = 'Тестовый просмотр';
+  $('homeS').innerHTML = 'Уровень: ' + esc(ME.trackName) + ' · открыты все дни и пробный экзамен';
+  var h = examCard();
+  h += '<div class="muted" style="margin:4px 0 8px;font-weight:700;color:#0f2a4f">Все дни <span style="font-weight:400">· в клетке — звёзды этого просмотра</span></div><div class="days">';
+  for (var d = 1; d <= ME.days; d++) { var st = dayStars(d); h += '<div class="d' + (st >= ME.mods.length ? ' done' : '') + '" onclick="openDay(' + d + ')"><b>' + d + '</b><span class="st">★' + st + '/' + ME.mods.length + '</span></div>'; }
+  h += '</div><div class="muted" style="margin-top:8px;font-size:11.5px">В тестовом просмотре открыты все дни — можно проверить материал заранее. Нашли ошибку — нажмите «⚑ Ошибка в вопросе?» под вопросом: замечание придёт руководителю.</div>';
+  $('homeBody').innerHTML = h;
+}
 function renderHome() {
+  if (ME && ME.test) return renderHomeTest();
+  $('testBar').style.display = 'none';
   var left = daysLeft(), dn = ME.dayNo, total = ME.days * ME.mods.length;
   $('homeT').textContent = 'ОЦ «Планета» · Олимпиада ' + dm(ME.eventDate);
   $('homeH').textContent = ME.first + ', привет!';
@@ -258,7 +281,7 @@ function modsHtml(day, compact) {
 }
 /* ---------- день ---------- */
 function openDay(day) {
-  CUR.day = day; $('dayBody').innerHTML = '<div class="spin"></div>'; $('dayT').textContent = 'ОЦ «Планета» · ' + ME.trackName; $('dayH').textContent = 'День ' + day; $('daySub').textContent = ''; show('scrDay');
+  CUR.day = day; $('dayBody').innerHTML = '<div class="spin"></div>'; $('dayT').textContent = 'ОЦ «Планета» · ' + ME.trackName + (ME.test ? ' · тестовый просмотр' : ''); $('dayH').textContent = 'День ' + day; $('daySub').textContent = ''; show('scrDay');
   loadDay(day).then(function() { renderDay(); }).catch(function(e) { $('dayBody').innerHTML = '<div class="err">' + esc(e.message || 'Не удалось загрузить день.') + '</div><div style="margin-top:12px"><button class="btn ghost" onclick="openDay(' + day + ')">Повторить</button></div>'; });
 }
 function loadDay(day) {
@@ -397,6 +420,11 @@ function finishTest() {
   var p = prog(day, m), guessP = p.p + (counted ? 1 : 0), guessStar = !!p.s || guessP >= ME.need;
   $('resBody').innerHTML = resHtml(score, total, counted, min, guessP, guessStar, false, m, day, 'Сохраняем результат…');
   show('scrRes');
+  if (ME.test) {   /* тестовая ссылка: ничего не отправляем, считаем на месте */
+    var np = { p: p.p + (counted ? 1 : 0), t: p.t + 1, b: Math.max(p.b, score), l: score, s: p.s || (p.p + (counted ? 1 : 0) >= ME.need ? '★' : '') }, ns = !p.s && !!np.s;
+    ME.progress[day + '|' + m] = np; if (ns) ME.stars++;
+    $('resBody').innerHTML = resHtml(score, total, counted, min, np.p, !!np.s, ns, m, day, 'Тестовый просмотр — результат не сохраняется.'); return;
+  }
   api(rec).then(function(r) {
     if (!r.ok) { if (r.code === 'locked') { toast(r.text); } else queue(rec); $('resBody').innerHTML = resHtml(score, total, counted, min, guessP, guessStar, false, m, day, r.code === 'locked' ? r.text : 'Нет связи — результат сохраним позже.'); return; }
     ME.progress[day + '|' + m] = { p: r.passes, t: r.tries, b: r.best, l: score, s: r.star ? '★' : '' }; ME.stars = r.stars;
@@ -477,6 +505,7 @@ function finishExam(auto) {
   $('exrT').textContent = 'ПРОБНЫЙ ЭКЗАМЕН · ВАРИАНТ ' + v;
   $('exrBody').innerHTML = examResHtml(v, score, total, parts, spent, prevBest, wrong, 'Сохраняем результат…');
   show('scrExamRes');
+  if (ME.test) { ME.progress[day + '|exam'] = { p: 0, t: (p.t || 0) + 1, b: Math.max(p.b || 0, score), l: score, s: '' }; $('exrBody').innerHTML = examResHtml(v, score, total, parts, spent, prevBest, wrong, 'Тестовый просмотр — результат не сохраняется.'); return; }
   api(rec).then(function(r) {
     if (!r.ok) { if (r.code === 'locked' || r.code === 'baddays') toast(r.text); else queue(rec); $('exrBody').innerHTML = examResHtml(v, score, total, parts, spent, prevBest, wrong, r.code === 'locked' ? r.text : 'Нет связи — результат сохраним позже.'); return; }
     ME.progress[day + '|exam'] = { p: r.passes, t: r.tries, b: r.best, l: score, s: '' };
@@ -518,9 +547,10 @@ function report() {
   var it = null, mod = '', day = 0;
   if (EXAM) { it = EXAM.items[EXAM.i]; mod = 'exam'; day = ME.examBase + EXAM.v; } else if (T) { it = T.items[T.i]; mod = T.mod; day = T.day; }
   if (!it) return;
+  var w = $('popWho'); if (ME && ME.test) { w.style.display = 'block'; w.value = ls('olimp_test_who') || ''; } else w.style.display = 'none';
   REP = { mod: mod, day: day, n: (it.mod === 'reading' ? (it.pi ? 'текст 2 · ' : '') : '') + it.n + (mod === 'exam' ? ' (' + PART_RU[it.mod] + ', №' + (EXAM.i + 1) + ')' : ''), q: String(it.q || '').replace(/<[^>]+>/g, '').slice(0, 300) }; $('popT').value = ''; $('pop').classList.add('on');
 }
-function sendReport() { var t = String($('popT').value || '').trim(); if (!t) { toast('Напишите, что не так.'); return; } $('pop').classList.remove('on'); api(Object.assign({ op: 'report', text: t }, REP), true).then(function(r) { toast(r.ok ? 'Спасибо! Учитель проверит.' : (r.text || 'Не отправилось.')); }).catch(function() { toast('Нет связи — попробуйте позже.'); }); }
+function sendReport() { var t = String($('popT').value || '').trim(); if (!t) { toast('Напишите, что не так.'); return; } var who = ME && ME.test ? String($('popWho').value || '').trim().slice(0, 60) : ''; if (who) ls('olimp_test_who', who); $('pop').classList.remove('on'); api(Object.assign({ op: 'report', text: t, who: who }, REP), true).then(function(r) { toast(r.ok ? 'Спасибо! Учитель проверит.' : (r.text || 'Не отправилось.')); }).catch(function() { toast('Нет связи — попробуйте позже.'); }); }
 window.addEventListener('online', flushQueue);
 start();
 </script>
