@@ -66,7 +66,7 @@ body{min-height:100vh;display:flex;flex-direction:column}
 .opt:disabled{cursor:default}
 .ex{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;font-size:13.5px;margin:4px 0 10px}
 .ex .en{color:#475569;font-size:12.5px;margin-top:4px}
-.txt{background:#fff;border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.5;color:#1e293b;margin-bottom:12px;white-space:pre-wrap;max-height:40vh;overflow:auto;border:1px solid #e2e8f0}
+.txt{background:#fff;border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.5;color:#1e293b;margin-bottom:12px;max-height:42vh;overflow:auto;border:1px solid #e2e8f0}
 .txt.hid{display:none}
 .res{text-align:center;padding:10px 0 4px}
 .res .big{font-size:46px;font-weight:900;color:#16a34a}
@@ -85,6 +85,23 @@ body{min-height:100vh;display:flex;flex-direction:column}
 .pop textarea{width:100%;height:90px;border:1px solid #cbd5e1;border-radius:10px;padding:8px;font-family:inherit;font-size:14px}
 .starbig{font-size:64px;animation:pop .6s ease}
 @keyframes pop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
+.lvl{display:inline-block;background:rgba(255,255,255,.18);border-radius:999px;padding:3px 10px;font-size:12px;margin-top:6px}
+.exam{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 6px 18px rgba(37,99,235,.3)}
+.exam h3{margin:0 0 4px;font-size:16px;color:#fff}.exam .muted{color:#dbeafe}
+.exam .btn{background:#fff;color:#1d4ed8;margin-top:10px}
+.exrows{margin-top:6px}.exrow{display:flex;gap:8px;align-items:baseline;font-size:13px;padding:2px 0}.exrow b{font-size:14px}.exrow .muted{font-size:12px}
+.timer{float:right;background:rgba(255,255,255,.18);border-radius:10px;padding:4px 10px;font-weight:800;font-size:15px;letter-spacing:1px}
+.timer.hot{background:#fde68a;color:#92400e}
+.parts{display:flex;gap:4px;margin:10px 0 2px}.parts i{flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.3)}.parts i.done{background:#22c55e}.parts i.cur{background:#fff}
+.para{margin:0 0 8px}.para b{color:#2563eb;margin-right:6px}
+.txt .para:last-child{margin-bottom:0}
+.mlist{background:#eff6ff;border-radius:12px;padding:8px 12px;font-size:14px;margin:4px 0 8px;font-weight:600}.mlist div{padding:2px 0}.mlist b{color:#1d4ed8;margin-right:6px}
+.gap{letter-spacing:1px;color:#2563eb}
+.sayb{font-weight:400;color:#2563eb;cursor:pointer;font-size:14px}
+.opt.sel{border-color:#2563eb;background:#eff6ff}
+.rtab{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}.rtab td{padding:6px 4px;border-bottom:1px solid #eef2f7}.rtab td:last-child{text-align:right;font-weight:800;white-space:nowrap}
+.grid70{display:grid;grid-template-columns:repeat(10,1fr);gap:5px}.grid70 span{display:block;text-align:center;font-size:12px;font-weight:700;padding:7px 0;border-radius:8px;background:#f1f5f9;color:#64748b;cursor:pointer}.grid70 span.a{background:#dbeafe;color:#1d4ed8}.grid70 span.cur{outline:2px solid #2563eb}
+.fc .ex-s{font-size:13.5px;color:#475569;margin-top:12px;font-style:italic}.fc .ex-s b{color:#0f2a4f}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0f2a4f;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;display:none;z-index:10;max-width:90%}
 </style>
 </head>
@@ -117,15 +134,25 @@ body{min-height:100vh;display:flex;flex-direction:column}
  <div class="pad" id="testBody"></div></div>
 <!-- результат -->
 <div class="scr" id="scrRes"><div class="top"><div class="t" id="resT"></div><h1>Результат</h1></div><div class="pad" id="resBody"></div><div class="foot">Автор и разработчик системы — Базарматов Б. У.</div></div>
+<!-- пробный экзамен: начало -->
+<div class="scr" id="scrExamIntro"><div class="top"><a class="back" onclick="go('home')">← На главную</a><div class="t">ОЦ «Планета» · Олимпиада</div><h1 id="exiH" style="font-size:20px"></h1><div class="sub" id="exiS"></div></div>
+ <div class="pad" id="exiBody"></div><div class="foot">Автор и разработчик системы — Базарматов Б. У.</div></div>
+<!-- пробный экзамен: вопросы -->
+<div class="scr" id="scrExam"><div class="top" style="padding-bottom:12px"><a class="back" onclick="quitExam()">← Прервать</a><div id="exH"></div></div>
+ <div class="pad" id="exBody"></div></div>
+<!-- пробный экзамен: результат -->
+<div class="scr" id="scrExamRes"><div class="top"><div class="t" id="exrT"></div><h1>Результат</h1></div><div class="pad" id="exrBody"></div><div class="foot">Автор и разработчик системы — Базарматов Б. У.</div></div>
 <div class="pop" id="pop"><div class="bx"><h3 style="margin:0 0 8px">Что не так в этом вопросе?</h3><textarea id="popT" placeholder="Например: правильный ответ другой, опечатка в слове…"></textarea><div class="two" style="margin-top:10px"><button class="btn ghost" onclick="$('pop').classList.remove('on')">Отмена</button><button class="btn" onclick="sendReport()">Отправить</button></div></div></div>
 <div class="toast" id="toast"></div>
 <script>
-/* Планета · Олимпиада — сайт подготовки (сборка 699; 702 — озвучка). Запросы к кабинету — без cookies (анонимно), как у страницы договора. */
+/* Планета · Олимпиада — сайт подготовки (сборка 699; 702 — формат контрольной ELITE: пять уровней, тесты 15/10/10/15/10, чтение с True/False/Not Given и сопоставлением, пробный экзамен 70 вопросов с таймером). Запросы к кабинету — без cookies (анонимно), как у страницы договора. */
 var API = 'https://script.google.com/macros/s/AKfycby0O1aycallOk5fTZUa5L_CG432hMARssdKtmOHsJzMaqOHvFUkYrYUCQKeqyTxCW8rcQ/exec';
 var Q = new URLSearchParams(location.search);
 var K = (function() { var inj = '__OLIMP_K__'; if (/^[0-9a-f]{16}$/i.test(inj)) return inj.toLowerCase(); return (String(Q.get('k') || '').match(/^[0-9a-f]{16}/i) || [''])[0].toLowerCase(); })();   /* ключ: из адреса (GitHub Pages) или подставленный кабинетом (страница в песочнице Google не видит адрес) */
 var ICON = { vocab: '📖', colloc: '🔗', synonyms: '🟰', paraphrase: '✍️', reading: '📰' };
-var ME = null, DAYS = {}, CUR = { day: 0, mod: '' }, T = null, LEARN = null, HIST = [];
+var PART_RU = { vocab: 'Слова', colloc: 'Словосочетания', synonyms: 'Синонимы', paraphrase: 'Перефразирование', reading: 'Чтение' };
+var TFNG_RU = { 'True': 'верно, так сказано в тексте', 'False': 'неверно, текст говорит обратное', 'Not Given': 'в тексте об этом не сказано' };
+var ME = null, DAYS = {}, EXM = {}, CUR = { day: 0, mod: '' }, T = null, LEARN = null, EXAM = null, EXTICK = 0;
 function $(i) { return document.getElementById(i); }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function ck(k, v) { try { if (v === undefined) { var m = document.cookie.match(new RegExp('(?:^|; )' + k + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : null; } document.cookie = k + '=' + encodeURIComponent(v === null ? '' : v) + '; max-age=' + (v === null ? 0 : 31536000) + '; path=/; SameSite=Lax'; } catch (e) { return null; } }
@@ -134,6 +161,8 @@ function toast(t) { var e = $('toast'); e.textContent = t; e.style.display = 'bl
 function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 function dm(iso) { return iso ? String(iso).split('-').reverse().slice(0, 2).join('.') : ''; }
 function plural(n, a, b, c) { n = Math.abs(n) % 100; var m = n % 10; if (n > 10 && n < 20) return c; if (m > 1 && m < 5) return b; if (m === 1) return a; return c; }
+function norm(s) { return String(s || '').trim().toLowerCase(); }
+function mmss(ms) { if (ms < 0) ms = 0; var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), ss = s % 60; return (h ? h + ':' + ('0' + m).slice(-2) : m) + ':' + ('0' + ss).slice(-2); }
 if (K) ls('olimp_k', K); else K = ls('olimp_k') || '';
 function fp() { var u = navigator.userAgent + '|' + (screen.width + 'x' + screen.height + 'x' + (window.devicePixelRatio || 1)) + '|' + (navigator.language || '') + '|' + (Intl.DateTimeFormat().resolvedOptions().timeZone || '') + '|' + (navigator.hardwareConcurrency || '') + '|' + (navigator.maxTouchPoints || ''); var h = 5381; for (var i = 0; i < u.length; i++) h = ((h * 33) ^ u.charCodeAt(i)) >>> 0; return 'f' + h.toString(36); }
 var DEV = ls('olimp_dev'); if (!DEV) { DEV = fp(); ls('olimp_dev', DEV); }   /* если хранилище не сохраняется — тот же отпечаток устройства в следующий раз */
@@ -185,14 +214,29 @@ $('codeIn').addEventListener('input', function() { this.value = this.value.repla
 function prog(day, mod) { return (ME && ME.progress && ME.progress[day + '|' + mod]) || { p: 0, t: 0, b: 0, l: 0, s: '' }; }
 function dayStars(day) { var n = 0; ME.mods.forEach(function(m) { if (prog(day, m).s) n++; }); return n; }
 function daysLeft() { var a = new Date(ME.today + 'T00:00:00'), b = new Date(ME.eventDate + 'T00:00:00'); return Math.round((b - a) / 86400000); }
+function examOpen() { return !!(ME && ME.dayNo && ME.examFrom && ME.dayNo >= ME.examFrom); }
+function examKey(v) { return 'olimp_exam_' + K + '_' + v; }
+function examSaved() { for (var v = 1; v <= (ME.examN || 3); v++) { var s = null; try { s = JSON.parse(ls(examKey(v)) || 'null'); } catch (e) {} if (s && s.endsAt && s.items) return s; } return null; }
+function examCard() {
+  if (!examOpen()) { if (ME.examFrom && ME.examFrom <= ME.days) return '<div class="card" style="background:#f8fafc"><h3>🎓 Пробный экзамен</h3><div class="muted">Откроется в день ' + ME.examFrom + ' (' + esc(dm(addDays(ME.start, ME.examFrom - 1))) + '): 70 вопросов, ' + ME.examMin + ' минут, как на олимпиаде.</div></div>'; return ''; }
+  var saved = examSaved(), rows = '', best = 0, tries = 0, next = 0;
+  for (var v = 1; v <= ME.examN; v++) { var p = prog(ME.examBase + v, 'exam'); if (p.t) { tries += p.t; if (p.b > best) best = p.b; rows += '<div class="exrow"><span>Вариант ' + v + '</span><b>' + p.b + ' из 70</b><span class="muted">' + (p.t > 1 ? p.t + ' попытки · ' : '') + 'лучший</span></div>'; } else if (!next) next = v; }
+  var h = '<div class="exam"><h3>🎓 Пробный экзамен</h3><div class="muted">70 вопросов · ' + ME.examMin + ' минут · как на олимпиаде ' + esc(dm(ME.eventDate)) + '. Без подсказок до конца.</div>';
+  if (saved) h += saved.endsAt > Date.now() ? '<div class="muted" style="margin-top:6px">Начатый вариант ' + saved.v + ': осталось ' + mmss(saved.endsAt - Date.now()) + '</div><button class="btn" onclick="resumeExam(' + saved.v + ')">Продолжить экзамен</button>'
+    : '<div class="muted" style="margin-top:6px">Время варианта ' + saved.v + ' вышло — ответы сохранены.</div><button class="btn" onclick="resumeExam(' + saved.v + ')">Посмотреть результат</button>';   /* время вышло, пока страница была закрыта */
+  else { if (rows) h += '<div class="exrows">' + rows + '</div>'; h += '<button class="btn" onclick="openExam(' + (next || 1) + ')">' + (next ? 'Начать вариант ' + next : 'Пройти ещё раз · вариант 1') + '</button>'; if (!next) h += '<div class="muted" style="text-align:center;margin-top:6px">Все три варианта пройдены' + (best ? ' · лучший ' + best + ' из 70' : '') + '</div>'; }
+  if (!saved && next && next > 1) h += '<div class="muted" style="text-align:center;margin-top:6px"><span style="text-decoration:underline;cursor:pointer" onclick="openExam(' + (next - 1) + ')">повторить вариант ' + (next - 1) + '</span></div>';
+  return h + '</div>';
+}
 function renderHome() {
   var left = daysLeft(), dn = ME.dayNo, total = ME.days * ME.mods.length;
-  $('homeT').textContent = 'ОЦ «Планета» · Олимпиада ' + dm(ME.eventDate) + ' · ' + ME.trackName;
+  $('homeT').textContent = 'ОЦ «Планета» · Олимпиада ' + dm(ME.eventDate);
   $('homeH').textContent = ME.first + ', привет!';
-  $('homeS').textContent = (left > 0 ? 'До олимпиады ' + left + ' ' + plural(left, 'день', 'дня', 'дней') : (left === 0 ? 'Олимпиада сегодня!' : 'Олимпиада прошла')) + (dn ? ' · сегодня день ' + dn : ' · старт ' + dm(ME.start)) + ' · ★ ' + ME.stars + ' из ' + total;
+  $('homeS').innerHTML = esc((left > 0 ? 'До олимпиады ' + left + ' ' + plural(left, 'день', 'дня', 'дней') : (left === 0 ? 'Олимпиада сегодня!' : 'Олимпиада прошла')) + (dn ? ' · сегодня день ' + dn : ' · старт ' + dm(ME.start)) + ' · ★ ' + ME.stars + ' из ' + total) + '<br><span class="lvl">Уровень: ' + esc(ME.trackName) + '</span>';
   var h = '';
-  if (!dn) h += '<div class="card"><h3>Занятия начнутся ' + esc(dm(ME.start)) + '</h3><div class="muted">Каждый день будет открываться новый набор заданий: слова, словосочетания, синонимы, перефразирование и чтение.</div></div>';
+  if (!dn) h += '<div class="card"><h3>Занятия начнутся ' + esc(dm(ME.start)) + '</h3><div class="muted">Каждый день будет открываться новый набор заданий: слова, словосочетания, синонимы, перефразирование и чтение — как в контрольной олимпиады.</div></div>';
   else {
+    h += examCard();
     h += '<div class="card" style="border:2px solid #2563eb;padding:12px 14px;cursor:pointer" onclick="openDay(' + dn + ')"><h3 style="display:flex;justify-content:space-between">Сегодня · День ' + dn + ' <span class="muted" style="font-weight:600">★ ' + dayStars(dn) + ' из ' + ME.mods.length + '</span></h3>' + modsHtml(dn, true) + '<div style="margin-top:10px"><span class="btn sm">Открыть день ' + dn + ' →</span></div></div>';
   }
   h += '<div class="muted" style="margin:4px 0 8px;font-weight:700;color:#0f2a4f">Все дни <span style="font-weight:400">· в клетке — сколько звёзд из ' + ME.mods.length + '</span></div><div class="days">';
@@ -201,13 +245,14 @@ function renderHome() {
     var when = !open && d <= dn + 2 ? dm(addDays(ME.start, d - 1)) : '';
     h += '<div class="d ' + cls + '"' + (open ? ' onclick="openDay(' + d + ')"' : '') + '><b>' + d + '</b>' + (open ? '<span class="st">★' + s + '/' + ME.mods.length + '</span>' : '🔒' + (when ? ' ' + when : '')) + '</div>';
   }
-  h += '</div><div class="muted" style="margin-top:8px;font-size:11.5px">Новый день — в полночь. Прошлые дни открыты, можно догнать. Звёздочка — ' + ME.need + ' ' + plural(ME.need, 'прохождение', 'прохождения', 'прохождений') + ' с результатом от ' + ME.min.vocab + ' из ' + ME.total.vocab + ' (чтение — от ' + ME.min.reading + ' из ' + ME.total.reading + ').</div>';
+  h += '</div><div class="muted" style="margin-top:8px;font-size:11.5px">Новый день — в полночь. Прошлые дни открыты, можно догнать. Звёздочка — ' + ME.need + ' ' + plural(ME.need, 'прохождение', 'прохождения', 'прохождений') + ' с результатом от ' + ME.min.vocab + ' из ' + ME.total.vocab + ' (словосочетания и синонимы — от ' + ME.min.colloc + ' из ' + ME.total.colloc + ', чтение — от ' + ME.min.reading + ' из ' + ME.total.reading + ').</div>';
   $('homeBody').innerHTML = h;
 }
 function addDays(iso, n) { var d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function modSub(m, tot) { return m === 'vocab' ? 'слова дня · тест ' + tot + ' ' + plural(tot, 'вопрос', 'вопроса', 'вопросов') : m === 'reading' ? 'текст + ' + tot + ' вопросов · True / False / Not Given' : tot + ' ' + plural(tot, 'вопрос', 'вопроса', 'вопросов'); }
 function modsHtml(day, compact) {
   return ME.mods.map(function(m) {
-    var p = prog(day, m), tot = ME.total[m], sub = (m === 'vocab' ? 'слова дня · тест ' + tot + ' вопроса' : m === 'reading' ? 'текст + ' + tot + ' вопросов' : tot + ' вопроса') + ' · ' + (p.t ? 'пройдено ' + p.p + ' из ' + ME.need + (p.b ? ' · лучший ' + p.b : '') : 'ещё не начинал(а)');
+    var p = prog(day, m), tot = ME.total[m], sub = modSub(m, tot) + ' · ' + (p.t ? 'пройдено ' + p.p + ' из ' + ME.need + (p.b ? ' · лучший ' + p.b : '') : 'ещё не начинал(а)');
     return '<div class="mod"' + (compact ? '' : ' onclick="openMod(\'' + m + '\')"') + '><span class="ic">' + ICON[m] + '</span><div><b>' + esc(ME.modNames[m]) + '</b><small>' + esc(sub) + '</small></div><span class="st' + (p.s ? ' on' : '') + '">' + (p.s ? '★' : p.p + '/' + ME.need) + '</span></div>';
   }).join('');
 }
@@ -218,7 +263,7 @@ function openDay(day) {
 }
 function loadDay(day) {
   if (DAYS[day]) return Promise.resolve(DAYS[day]);
-  var key = 'olimp_day_' + ME.track + '_' + day + '_' + (ME.matVer || ''), c = ls(key);   /* материал общий для возраста — ключ без ученика */ if (c) { try { DAYS[day] = JSON.parse(c); return Promise.resolve(DAYS[day]); } catch (e) {} }
+  var key = 'olimp_day_' + ME.track + '_' + day + '_' + (ME.matVer || ''), c = ls(key);   /* материал общий для уровня — ключ без ученика */ if (c) { try { DAYS[day] = JSON.parse(c); return Promise.resolve(DAYS[day]); } catch (e) {} }
   return api({ op: 'day', day: day }).then(function(r) { if (!r.ok) throw new Error(r.text || 'Ошибка.'); DAYS[day] = r.mods; ls(key, JSON.stringify(r.mods)); return r.mods; });
 }
 function renderDay() {
@@ -244,11 +289,11 @@ function renderLearn() {
   $('learnH').textContent = '📖 Учить · ' + Math.min(L.done + 1, L.total) + ' из ' + L.total;
   if (!w) {
     ls(learnedKey(L.day), String(L.total));
-    $('learnBody').innerHTML = '<div class="card" style="text-align:center"><div class="starbig">🎉</div><h3>Все ' + L.total + ' слов пройдены!</h3><div class="muted">Теперь проверьте себя: тест на ' + ME.total.vocab + ' вопроса. Результат от ' + ME.min.vocab + ' засчитывается.</div><div style="margin-top:12px"><button class="btn ok" onclick="startTest(\'vocab\')">✍️ Начать тест</button></div><div style="margin-top:8px"><button class="btn ghost" onclick="startLearn()">Повторить карточки</button></div></div>';
+    $('learnBody').innerHTML = '<div class="card" style="text-align:center"><div class="starbig">🎉</div><h3>Все ' + L.total + ' слов пройдены!</h3><div class="muted">Теперь проверьте себя: тест ' + ME.total.vocab + ' вопросов, как на олимпиаде. Результат от ' + ME.min.vocab + ' засчитывается.</div><div style="margin-top:12px"><button class="btn ok" onclick="startTest(\'vocab\')">✍️ Начать тест</button></div><div style="margin-top:8px"><button class="btn ghost" onclick="startLearn()">Повторить карточки</button></div></div>';
     return;
   }
   var pct = Math.round(L.done / L.total * 100);
-  $('learnBody').innerHTML = '<div class="bar"><i style="width:' + pct + '%"></i></div><div class="fc"><div class="w">' + esc(w.w) + '</div><div class="sp" onclick="say(' + esc(JSON.stringify(w.w)) + ')">🔊 слушать</div><div class="def">' + esc(w.d) + '</div><div class="ru">' + esc(w.ru) + '</div></div><div class="two"><button class="btn ghost" onclick="learnNext(false)">↻ Ещё раз</button><button class="btn ok" onclick="learnNext(true)">✓ Знаю</button></div><div class="muted" style="text-align:center;margin-top:12px">«Ещё раз» — слово вернётся в конце. Когда все отмечены «Знаю», откроется тест.</div>';
+  $('learnBody').innerHTML = '<div class="bar"><i style="width:' + pct + '%"></i></div><div class="fc"><div class="w">' + esc(w.w) + '</div><div class="sp" onclick="say(' + esc(JSON.stringify(w.w)) + ')">🔊 слушать</div><div class="def">' + esc(w.d) + '</div><div class="ru">' + esc(w.ru) + '</div>' + (w.s ? '<div class="ex-s">' + boldWord(w.s, w.w) + '</div>' : '') + '</div><div class="two"><button class="btn ghost" onclick="learnNext(false)">↻ Ещё раз</button><button class="btn ok" onclick="learnNext(true)">✓ Знаю</button></div><div class="muted" style="text-align:center;margin-top:12px">«Ещё раз» — слово вернётся в конце. Когда все отмечены «Знаю», откроется тест.</div>';
 }
 function learnNext(know) { var L = LEARN, w = L.queue.shift(); if (know) L.done++; else L.queue.push(w); renderLearn(); }
 var __say = null;   /* ссылка на фразу — иначе Safari может «потерять» её до конца озвучки */
@@ -262,37 +307,76 @@ function say(w) {
     if (s.speaking || s.pending) { s.cancel(); setTimeout(go, 80); } else go();   /* iPhone: cancel() сразу перед speak() глушит новую фразу — отменяем только если что-то звучит */
   } catch (e) { toast('Озвучка на этом телефоне недоступна'); }
 }
-/* ---------- тест ---------- */
-function vocabQuestions(words) {
-  var pool = shuffle(words.slice()).slice(0, ME.total.vocab), qs = [];
-  pool.forEach(function(w, i) {
-    var others = shuffle(words.filter(function(x) { return x.n !== w.n && x.ru.toLowerCase() !== w.ru.toLowerCase() && x.w.toLowerCase() !== w.w.toLowerCase(); })).slice(0, 3), type = i % 3, opts, q, correct;
-    if (type === 0) { q = 'Что значит <b>' + esc(w.w) + '</b>?'; correct = w.ru; opts = others.map(function(x) { return x.ru; }); }
-    else if (type === 1) { q = 'Какое слово значит «' + esc(w.ru) + '»?'; correct = w.w; opts = others.map(function(x) { return x.w; }); }
-    else { q = 'Which word means: <i>' + esc(w.d) + '</i>?'; correct = w.w; opts = others.map(function(x) { return x.w; }); }
-    var all = shuffle(opts.concat([correct]));
-    qs.push({ q: q, o: all, a: all.indexOf(correct), en: w.w + ' — ' + w.d, ru: w.w + ' — ' + w.ru, n: w.n, say: w.w });
+/* ---------- вопросы (общее для теста дня и экзамена) ---------- */
+function boldWord(s, w) {   /* выделить слово (и его форму) в предложении */
+  s = String(s || ''); w = String(w || ''); var stem = w.toLowerCase().slice(0, Math.max(3, w.length - 3)).replace(/[^a-z'-]/g, '');
+  var m = stem ? s.match(new RegExp('(' + stem.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '[a-zA-Z\'-]*)', 'i')) : null;
+  if (!m) return esc(s); return esc(s.slice(0, m.index)) + '<b>' + esc(m[1]) + '</b>' + esc(s.slice(m.index + m[1].length));
+}
+function vocabQuestions(words, n) {   /* формат контрольной: предложение со словом → «What does … mean?» → 4 определения */
+  var pool = shuffle(words.slice()).slice(0, n), qs = [];
+  pool.forEach(function(w) {
+    var others = shuffle(words.filter(function(x) { return x.n !== w.n && norm(x.d) !== norm(w.d) && norm(x.w) !== norm(w.w); })).slice(0, 3);
+    var all = shuffle(others.map(function(x) { return x.d; }).concat([w.d]));
+    qs.push({ mod: 'vocab', q: (w.s ? '<span class="orig">' + boldWord(w.s, w.w) + '</span>' : '') + 'What does <b>' + esc(w.w) + '</b> mean?', html: true, o: all, a: all.indexOf(w.d), en: w.w + ' — ' + w.d, ru: w.w + ' — ' + w.ru, n: w.n, say: w.w });
   });
   return qs;
 }
+function readingPassages(R) {   /* старый формат чтения (до сборки 702): один текст без абзацев A–E — показываем как один текст */
+  if (!R) return []; if (R.passages) return R.passages;
+  if (R.text) return [{ title: R.title || '', paras: String(R.text).split(/\n\s*\n/).map(function(t, i) { return { id: String.fromCharCode(65 + i), text: t.trim() }; }), items: R.items || [] }];
+  return [];
+}
+function mixOpts(it) {   /* варианты в случайном порядке — правильный ответ не стоит всегда на одном месте; True/False/Not Given и сопоставление (A–D) — в своём порядке */
+  if (!it.o || it.o.length < 3 || it.t === 'tfng' || it.t === 'match') return it;
+  var idx = shuffle(it.o.map(function(x, k) { return k; }));
+  return Object.assign({}, it, { o: idx.map(function(k) { return it.o[k]; }), a: idx.indexOf(it.a) });
+}
+function dayItems(M, m, exam) {   /* вопросы одного задания из материала дня (или варианта экзамена) */
+  if (m === 'vocab') return vocabQuestions(M.vocab.words, ME.total.vocab);
+  if (m === 'reading') { var out = []; readingPassages(M.reading).forEach(function(ps, pi) { ps.items.forEach(function(it, i) { out.push(mixOpts(Object.assign({}, it, { mod: 'reading', n: i + 1, pi: pi, title: ps.title, paras: ps.paras, matchQ: ps.matchQ }))); }); }); return out; }
+  var items = M[m].items.map(function(it, i) { return mixOpts(Object.assign({}, it, { mod: m, n: i + 1 })); });
+  return exam ? items : shuffle(items);
+}
+function paraphraseStem() { return ME.track === 'g910' || ME.track === 'g11' ? 'Which sentence preserves the meaning most accurately?' : 'Which sentence means the same?'; }
+function stemHtml(it, exam) {
+  var m = it.mod, h = '';
+  if (m === 'paraphrase') return '<span class="orig">' + esc(it.q) + '</span>' + paraphraseStem();
+  if (m === 'vocab' || m === 'synonyms') return it.q + (it.say ? ' <span class="sayb" onclick="say(' + esc(JSON.stringify(it.say)) + ')">🔊</span>' : '');
+  if (m === 'colloc') return esc(it.q).replace(/_{3,}/g, '<span class="gap">______</span>');
+  if (m === 'reading') {
+    if (it.t === 'tfng') return '<span class="muted" style="font-weight:600;display:block;margin-bottom:4px">' + (exam ? 'Do the sentences agree with the passage?' : 'Согласуется ли утверждение с текстом?') + '</span>' + esc(it.q);
+    if (it.t === 'match') return '<span class="muted" style="font-weight:600;display:block;margin-bottom:4px">' + esc(it.matchQ || 'Match each sentence.') + '</span><div class="mlist">' + (it.o || []).map(function(o, k) { return '<div><b>' + 'ABCD'[k] + '</b>' + esc(o) + '</div>'; }).join('') + '</div>' + esc(it.q);
+    return esc(it.q);
+  }
+  return esc(it.q);
+}
+function optText(it, k, exam) {
+  var o = String(it.o[k]);
+  if (it.mod === 'reading' && it.t === 'tfng') return exam ? o : o + ' — ' + (TFNG_RU[o] || '');
+  if (it.mod === 'reading' && it.t === 'match') return 'ABCD'[k] + ' · ' + o;
+  return o;
+}
+function passageHtml(it, shown, tog) {
+  if (it.mod !== 'reading') return '';
+  return '<div class="muted" style="display:flex;justify-content:space-between;align-items:center;margin:6px 0"><b style="color:#0f2a4f">' + esc(it.title) + '</b><span style="color:#2563eb;cursor:pointer" onclick="' + tog + '">' + (shown ? 'свернуть текст' : '📄 показать текст') + '</span></div>' +
+    '<div class="txt' + (shown ? '' : ' hid') + '">' + (it.paras || []).map(function(p) { return '<p class="para"><b>' + esc(p.id) + '</b>' + esc(p.text) + '</p>'; }).join('') + '</div>';
+}
+/* ---------- тест дня ---------- */
 function startTest(m) {
-  var day = CUR.day, M = DAYS[day][m]; if (!M) return;
+  var day = CUR.day, M = DAYS[day]; if (!M || !M[m]) return;
   CUR.mod = m;
-  var items;
-  if (m === 'vocab') items = vocabQuestions(M.words);
-  else { items = shuffle(M.items.slice()).map(function(it, i) { return Object.assign({}, it, { n: i + 1 }); }); if (m === 'reading') items = M.items.map(function(it, i) { return Object.assign({}, it, { n: i + 1 }); }); }
-  T = { mod: m, day: day, items: items, i: 0, score: 0, answered: false, text: m === 'reading' ? M.text : '', title: m === 'reading' ? M.title : '', showText: true };
+  T = { mod: m, day: day, items: dayItems(M, m, false), i: 0, score: 0, answered: false, showText: true };
   $('testT').textContent = 'День ' + day + ' · ' + ME.modNames[m]; show('scrTest'); renderQ();
 }
 function quitTest() { if (T && T.i > 0 && T.i < T.items.length && !confirm('Выйти из теста? Этот результат не засчитается.')) return; T = null; go('day'); }
 function renderQ() {
-  var it = T.items[T.i], n = T.i + 1, tot = T.items.length, m = T.mod;
-  $('testH').innerHTML = 'Вопрос ' + n + ' из ' + tot + ' · верно ' + T.score;
-  var stem = m === 'paraphrase' ? '<span class="orig">' + esc(it.q) + '</span>' + (ME.track === 'adults' ? 'Which sentence preserves the meaning most accurately?' : 'Which sentence has the same meaning?') : (m === 'synonyms' || m === 'vocab' ? it.q : esc(it.q));
+  var it = T.items[T.i], n = T.i + 1, tot = T.items.length;
+  $('testH').innerHTML = 'Вопрос ' + n + ' из ' + tot + ' · верно ' + T.score + ' · нужно ' + ME.min[T.mod];
   var h = '<div class="bar"><i style="width:' + Math.round(T.i / tot * 100) + '%"></i></div>';
-  if (m === 'reading') h += '<div class="muted" style="display:flex;justify-content:space-between;align-items:center;margin:6px 0"><b style="color:#0f2a4f">' + esc(T.title) + '</b><span style="color:#2563eb;cursor:pointer" onclick="T.showText=!T.showText;renderQ()">' + (T.showText ? 'скрыть текст' : 'показать текст') + '</span></div><div class="txt' + (T.showText ? '' : ' hid') + '">' + esc(T.text) + '</div>';
-  h += '<div class="q">' + stem + (it.say ? ' <span style="font-weight:400;color:#2563eb;cursor:pointer;font-size:14px" onclick="say(' + esc(JSON.stringify(it.say)) + ')">🔊</span>' : '') + '</div>';
-  it.o.forEach(function(o, k) { h += '<button class="opt" id="opt' + k + '" onclick="answer(' + k + ')">' + esc(o) + '</button>'; });
+  h += passageHtml(it, T.showText, 'T.showText=!T.showText;renderQ()');
+  h += '<div class="q">' + stemHtml(it, false) + '</div>';
+  it.o.forEach(function(o, k) { h += '<button class="opt" id="opt' + k + '" onclick="answer(' + k + ')">' + esc(optText(it, k, false)) + '</button>'; });
   h += '<div id="exBox"></div><div class="flag" onclick="report()">⚑ Ошибка в вопросе?</div>';
   $('testBody').innerHTML = h; T.answered = false; window.scrollTo(0, 0);
 }
@@ -300,8 +384,8 @@ function answer(k) {
   if (T.answered) return; T.answered = true;
   var it = T.items[T.i], ok = k === it.a; if (ok) T.score++;
   it.o.forEach(function(o, j) { var b = $('opt' + j); b.disabled = true; if (j === it.a) b.classList.add('ok'); if (j === k && !ok) b.classList.add('no'); });
-  $('exBox').innerHTML = '<div class="ex"><b style="color:' + (ok ? '#166534' : '#991b1b') + '">' + (ok ? '✓ Верно!' : '✗ Неверно. Правильно: ' + esc(it.o[it.a])) + '</b><div style="margin-top:4px">' + esc(it.ru) + '</div><div class="en">' + esc(it.en) + '</div></div><button class="btn" onclick="nextQ()">' + (T.i + 1 < T.items.length ? 'Дальше →' : 'Результат') + '</button>';
-  $('testH').innerHTML = 'Вопрос ' + (T.i + 1) + ' из ' + T.items.length + ' · верно ' + T.score;
+  $('exBox').innerHTML = '<div class="ex"><b style="color:' + (ok ? '#166534' : '#991b1b') + '">' + (ok ? '✓ Верно!' : '✗ Неверно. Правильно: ' + esc(optText(it, it.a, true))) + '</b><div style="margin-top:4px">' + esc(it.ru) + '</div><div class="en">' + esc(it.en) + '</div></div><button class="btn" onclick="nextQ()">' + (T.i + 1 < T.items.length ? 'Дальше →' : 'Результат') + '</button>';
+  $('testH').innerHTML = 'Вопрос ' + (T.i + 1) + ' из ' + T.items.length + ' · верно ' + T.score + ' · нужно ' + ME.min[T.mod];
   setTimeout(function() { try { $('exBox').scrollIntoView({ behavior: 'smooth', block: 'end' }); } catch (e) {} }, 50);
 }
 function nextQ() { T.i++; if (T.i < T.items.length) renderQ(); else finishTest(); }
@@ -327,6 +411,92 @@ function resHtml(score, total, counted, min, passes, star, newStar, m, day, note
     '<button class="btn" onclick="startTest(\'' + m + '\')" style="margin-top:6px">Пройти ещё раз</button>' + (m === 'vocab' ? '<button class="btn ghost" onclick="startLearn()" style="margin-top:8px">📖 Повторить слова</button>' : '') + '</div>' +
     '<button class="btn ghost" onclick="go(\'day\')">К заданиям дня ' + day + '</button><div style="height:8px"></div><button class="btn ghost" onclick="go(\'home\')">На главную</button>';
 }
+/* ---------- пробный экзамен ---------- */
+function loadExam(v) {
+  if (EXM[v]) return Promise.resolve(EXM[v]);
+  var key = 'olimp_ex_' + ME.track + '_' + v + '_' + (ME.matVer || ''), c = ls(key); if (c) { try { EXM[v] = JSON.parse(c); return Promise.resolve(EXM[v]); } catch (e) {} }
+  return api({ op: 'exam', v: v }).then(function(r) { if (!r.ok) throw new Error(r.text || 'Ошибка.'); EXM[v] = { mods: r.mods, minutes: r.minutes }; ls(key, JSON.stringify(EXM[v])); return EXM[v]; });
+}
+function openExam(v) {
+  $('exiBody').innerHTML = '<div class="spin"></div>'; $('exiH').textContent = '🎓 Пробный экзамен · вариант ' + v; $('exiS').textContent = 'Как на олимпиаде ' + dm(ME.eventDate) + ' · уровень ' + ME.trackName; show('scrExamIntro');
+  loadExam(v).then(function(E) {
+    var p = prog(ME.examBase + v, 'exam'), min = E.minutes || ME.examMin, n2 = readingPassages(E.mods.reading).length;
+    $('exiBody').innerHTML = '<div class="card"><h3>Как проходит</h3><table class="rtab"><tr><td>Часть 1 · Слова</td><td>' + ME.total.vocab + '</td></tr><tr><td>Часть 2 · Словосочетания</td><td>' + ME.total.colloc + '</td></tr><tr><td>Часть 3 · Синонимы</td><td>' + ME.total.synonyms + '</td></tr><tr><td>Часть 4 · Перефразирование</td><td>' + ME.total.paraphrase + '</td></tr><tr><td>Часть 5 · Чтение (' + n2 + ' ' + plural(n2, 'текст', 'текста', 'текстов') + ')</td><td>' + (ME.total.reading * n2) + '</td></tr><tr><td><b>Всего</b></td><td>' + ME.total.exam + ' · ' + min + ' мин</td></tr></table>' +
+      '<div class="muted">Объяснений во время экзамена нет — только в разборе после. Таймер идёт, даже если закрыть страницу. Ответ можно менять до конца экзамена.</div></div>' +
+      '<div class="warn">Найдите тихое место и ' + min + ' минут без перерыва. Словарём пользоваться нельзя — как на настоящей олимпиаде.</div>' +
+      '<button class="btn" style="margin-top:12px" onclick="beginExam(' + v + ')">Начать экзамен</button><div class="muted" style="text-align:center;margin-top:8px">' + (p.t ? 'Попытка ' + (p.t + 1) + ' · прошлый результат ' + p.l + ' из ' + ME.total.exam + (p.b > p.l ? ' · лучший ' + p.b : '') : 'Первая попытка') + '</div>';
+  }).catch(function(e) { $('exiBody').innerHTML = '<div class="err">' + esc(e.message || 'Не удалось загрузить вариант.') + '</div><div style="margin-top:12px"><button class="btn ghost" onclick="openExam(' + v + ')">Повторить</button></div>'; });
+}
+function beginExam(v) {
+  var E = EXM[v]; if (!E) return;
+  var items = [], parts = ['vocab', 'colloc', 'synonyms', 'paraphrase', 'reading'];
+  parts.forEach(function(m, pi) { dayItems(E.mods, m, true).forEach(function(it) { it.part = pi + 1; items.push(it); }); });
+  var min = E.minutes || ME.examMin;
+  EXAM = { v: v, items: items, ans: {}, i: 0, endsAt: Date.now() + min * 60000, startedAt: Date.now(), showText: true, minutes: min };
+  saveExam(); show('scrExam'); renderExamQ(); startTick();
+}
+function saveExam() { if (!EXAM) return; ls(examKey(EXAM.v), JSON.stringify({ v: EXAM.v, items: EXAM.items, ans: EXAM.ans, i: EXAM.i, endsAt: EXAM.endsAt, startedAt: EXAM.startedAt, minutes: EXAM.minutes })); }
+function resumeExam(v) {
+  var s = null; try { s = JSON.parse(ls(examKey(v)) || 'null'); } catch (e) {}
+  if (!s || !s.items) { toast('Начатого экзамена нет.'); return; }
+  EXAM = { v: s.v, items: s.items, ans: s.ans || {}, i: s.i || 0, endsAt: s.endsAt, startedAt: s.startedAt, showText: true, minutes: s.minutes };
+  if (Date.now() >= EXAM.endsAt) { finishExam(true); return; }
+  show('scrExam'); renderExamQ(); startTick();
+}
+function startTick() { clearInterval(EXTICK); EXTICK = setInterval(function() { if (!EXAM) { clearInterval(EXTICK); return; } var left = EXAM.endsAt - Date.now(); var t = $('exTimer'); if (t) { t.textContent = '⏱ ' + mmss(left); t.className = 'timer' + (left < 5 * 60000 ? ' hot' : ''); } if (left <= 0) { clearInterval(EXTICK); toast('Время вышло — экзамен завершён.'); finishExam(true); } }, 1000); }
+function renderExamQ() {
+  var X = EXAM, it = X.items[X.i], n = X.i + 1, tot = X.items.length, unanswered = X.items.filter(function(q, k) { return X.ans[k] === undefined; }).length;
+  $('exH').innerHTML = '<span class="timer" id="exTimer">⏱ ' + mmss(X.endsAt - Date.now()) + '</span><div class="t">ПРОБНЫЙ ЭКЗАМЕН · ЧАСТЬ ' + it.part + ' · ' + esc(PART_RU[it.mod]).toUpperCase() + '</div><h1 style="font-size:17px">Вопрос ' + n + ' из ' + tot + '</h1><div class="parts">' + [1, 2, 3, 4, 5].map(function(p) { return '<i class="' + (p < it.part ? 'done' : p === it.part ? 'cur' : '') + '"></i>'; }).join('') + '</div>';
+  var h = passageHtml(it, X.showText, 'EXAM.showText=!EXAM.showText;renderExamQ()');
+  h += '<div class="q">' + stemHtml(it, true) + '</div>';
+  it.o.forEach(function(o, k) { h += '<button class="opt' + (X.ans[X.i] === k ? ' sel' : '') + '" onclick="examPick(' + k + ')">' + esc(optText(it, k, true)) + '</button>'; });
+  h += '<div class="two" style="margin-top:6px"><button class="btn ghost" onclick="examNav(-1)"' + (X.i === 0 ? ' disabled' : '') + '>← Назад</button>' + (X.i + 1 < tot ? '<button class="btn" onclick="examNav(1)">Дальше →</button>' : '<button class="btn ok" onclick="finishExam(false)">Завершить экзамен</button>') + '</div>';
+  h += '<div class="muted" style="text-align:center;margin-top:10px">Без ответа: <b id="exUn">' + unanswered + '</b> · <u style="cursor:pointer" onclick="examList()">К списку вопросов</u></div><div class="flag" onclick="report()">⚑ Ошибка в вопросе?</div>';
+  $('exBody').innerHTML = h; window.scrollTo(0, 0);
+}
+function examPick(k) { EXAM.ans[EXAM.i] = k; saveExam(); document.querySelectorAll('#exBody .opt').forEach(function(b, j) { b.classList.toggle('sel', j === k); }); var u = $('exUn'); if (u) u.textContent = EXAM.items.filter(function(q, j) { return EXAM.ans[j] === undefined; }).length; }
+function examNav(d) { var X = EXAM, j = X.i + d; if (j < 0 || j >= X.items.length) return; X.i = j; saveExam(); renderExamQ(); }
+function examList() {
+  var X = EXAM, h = '<div class="card"><h3>Вопросы</h3><div class="grid70">';
+  X.items.forEach(function(it, k) { h += '<span class="' + (X.ans[k] !== undefined ? 'a' : '') + (k === X.i ? ' cur' : '') + '" onclick="EXAM.i=' + k + ';saveExam();renderExamQ()">' + (k + 1) + '</span>'; });
+  h += '</div><div class="muted" style="margin-top:8px">Синие — с ответом, серые — без ответа. Нажмите номер, чтобы перейти.</div></div><button class="btn ghost" onclick="renderExamQ()">← Вернуться к вопросу ' + (X.i + 1) + '</button>';
+  $('exBody').innerHTML = h; window.scrollTo(0, 0);
+}
+function quitExam() { if (!confirm('Прервать экзамен? Время продолжит идти. Вернуться можно с главного экрана, пока время не вышло.')) return; clearInterval(EXTICK); saveExam(); EXAM = null; go('home'); }
+function finishExam(auto) {
+  var X = EXAM; if (!X) return;
+  var unanswered = X.items.filter(function(q, k) { return X.ans[k] === undefined; }).length;
+  if (!auto && unanswered && !confirm('Без ответа: ' + unanswered + '. Завершить экзамен? Пустые ответы считаются неверными.')) return;
+  clearInterval(EXTICK);
+  var parts = [0, 0, 0, 0, 0], score = 0, wrong = [];
+  X.items.forEach(function(it, k) { var ok = X.ans[k] === it.a; if (ok) { score++; parts[it.part - 1]++; } else wrong.push({ k: k, it: it, my: X.ans[k] }); });
+  var v = X.v, day = ME.examBase + v, spent = Math.min(Date.now(), X.endsAt) - X.startedAt, total = X.items.length;
+  var rec = { op: 'pass', k: K, mod: 'exam', day: day, score: score, total: total, parts: parts.join(','), at: new Date().toISOString() };
+  ls(examKey(v), null); EXAM = null;
+  var p = prog(day, 'exam'), prevBest = p.b;
+  $('exrT').textContent = 'ПРОБНЫЙ ЭКЗАМЕН · ВАРИАНТ ' + v;
+  $('exrBody').innerHTML = examResHtml(v, score, total, parts, spent, prevBest, wrong, 'Сохраняем результат…');
+  show('scrExamRes');
+  api(rec).then(function(r) {
+    if (!r.ok) { if (r.code === 'locked' || r.code === 'baddays') toast(r.text); else queue(rec); $('exrBody').innerHTML = examResHtml(v, score, total, parts, spent, prevBest, wrong, r.code === 'locked' ? r.text : 'Нет связи — результат сохраним позже.'); return; }
+    ME.progress[day + '|exam'] = { p: r.passes, t: r.tries, b: r.best, l: score, s: '' };
+    $('exrBody').innerHTML = examResHtml(v, score, total, parts, spent, prevBest, wrong, '');
+  }).catch(function() { queue(rec); $('exrBody').innerHTML = examResHtml(v, score, total, parts, spent, prevBest, wrong, 'Нет связи — результат сохраним, когда появится интернет.'); });
+}
+function examResHtml(v, score, total, parts, spent, prevBest, wrong, note) {
+  var names = ['Слова', 'Словосочетания', 'Синонимы', 'Перефразирование', 'Чтение'], tots = [ME.total.vocab, ME.total.colloc, ME.total.synonyms, ME.total.paraphrase, total - ME.total.vocab - ME.total.colloc - ME.total.synonyms - ME.total.paraphrase];
+  var worst = 0, worstR = 2; parts.forEach(function(p, i) { var r = tots[i] ? p / tots[i] : 1; if (r < worstR) { worstR = r; worst = i; } });
+  var tf = wrong.filter(function(w) { return w.it.mod === 'reading' && w.it.t === 'tfng'; }).length;
+  var h = '<div class="card"><div class="res"><div class="big">' + score + ' <span style="font-size:22px;color:#64748b">из ' + total + '</span></div><div class="muted">' + Math.round(score / total * 100) + '% · время ' + mmss(spent) + (prevBest ? (score > prevBest ? ' · лучше прошлого на ' + (score - prevBest) : ' · прошлый лучший ' + prevBest) : '') + '</div></div>';
+  h += '<table class="rtab">' + names.map(function(nm, i) { return '<tr><td>Часть ' + (i + 1) + ' · ' + nm + '</td><td' + (tots[i] && parts[i] / tots[i] < 0.6 ? ' style="color:#b91c1c"' : '') + '>' + parts[i] + ' / ' + tots[i] + '</td></tr>'; }).join('') + '</table>';
+  h += '<div class="muted">' + (worstR < 0.8 ? 'Слабее всего — ' + names[worst].toLowerCase() + (worst === 4 && tf ? ', особенно True / False / Not Given (' + tf + ' ' + plural(tf, 'ошибка', 'ошибки', 'ошибок') + ')' : '') + '. Потренируйте «' + names[worst] + '» в ближайшие дни.' : 'Все части на хорошем уровне — так держать!') + '</div>';
+  if (note) h += '<div class="muted" style="margin-top:6px;color:#92400e">' + esc(note) + '</div>';
+  h += '</div>';
+  if (wrong.length) h += '<button class="btn" onclick="examReview()">Разобрать ошибки (' + wrong.length + ')</button><div id="exReview" style="display:none;margin-top:10px">' + wrong.map(function(w) { var it = w.it; return '<div class="card"><div class="muted">Вопрос ' + (w.k + 1) + ' · ' + esc(PART_RU[it.mod]) + (it.mod === 'reading' ? ' · ' + esc(it.title) : '') + '</div><div class="q" style="font-size:15px">' + stemHtml(it, true) + '</div><div class="ex"><div style="color:#991b1b">Ваш ответ: ' + (w.my === undefined ? '— (нет)' : esc(optText(it, w.my, true))) + '</div><div style="color:#166534;font-weight:700">Правильно: ' + esc(optText(it, it.a, true)) + '</div><div style="margin-top:4px">' + esc(it.ru) + '</div><div class="en">' + esc(it.en) + '</div></div></div>'; }).join('') + '</div>';
+  h += '<button class="btn ghost" style="margin-top:10px" onclick="go(\'home\')">На главную</button>';
+  return h;
+}
+function examReview() { var e = $('exReview'); e.style.display = e.style.display === 'none' ? 'block' : 'none'; if (e.style.display === 'block') try { e.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (x) {} }
 /* ---------- очередь результатов без связи ---------- */
 function queue(rec) { var q = []; try { q = JSON.parse(ls('olimp_q') || '[]'); } catch (e) {} if (!q.some(function(x) { return x.at === rec.at && x.k === rec.k; })) q.push(rec); ls('olimp_q', JSON.stringify(q.slice(-50))); }
 var FLUSHING = false;
@@ -338,13 +508,18 @@ function flushQueue() {
     var drop = r.ok || r.code === 'locked' || r.code === 'baddays' || r.code === 'badkey' || (r.ok === false && !r.code && /Неизвестное задание/.test(r.text || ''));
     if (!drop) return;   /* сервер занят, нет доступа, нужен код — результат остаётся в очереди до следующего раза */
     var q2 = []; try { q2 = JSON.parse(ls('olimp_q') || '[]'); } catch (e) {} ls('olimp_q', JSON.stringify(q2.filter(function(x) { return !(x.at === rec.at && x.k === rec.k); })));
-    if (r.ok && ME && rec.k === K) { ME.progress[rec.day + '|' + rec.mod] = { p: r.passes, t: r.tries, b: r.best, l: rec.score, s: r.star ? '★' : '' }; ME.stars = r.stars; }
+    if (r.ok && ME && rec.k === K) { ME.progress[rec.day + '|' + rec.mod] = { p: r.passes, t: r.tries, b: r.best, l: rec.score, s: r.star ? '★' : '' }; if (r.stars !== undefined) ME.stars = r.stars; }
     flushQueue();
   }).catch(function() { FLUSHING = false; });
 }
 /* ---------- ошибка в вопросе ---------- */
 var REP = null;
-function report() { if (!T) return; REP = { mod: T.mod, day: T.day, n: T.items[T.i].n, q: String(T.items[T.i].q || '').replace(/<[^>]+>/g, '').slice(0, 300) }; $('popT').value = ''; $('pop').classList.add('on'); }
+function report() {
+  var it = null, mod = '', day = 0;
+  if (EXAM) { it = EXAM.items[EXAM.i]; mod = 'exam'; day = ME.examBase + EXAM.v; } else if (T) { it = T.items[T.i]; mod = T.mod; day = T.day; }
+  if (!it) return;
+  REP = { mod: mod, day: day, n: (it.mod === 'reading' ? (it.pi ? 'текст 2 · ' : '') : '') + it.n + (mod === 'exam' ? ' (' + PART_RU[it.mod] + ', №' + (EXAM.i + 1) + ')' : ''), q: String(it.q || '').replace(/<[^>]+>/g, '').slice(0, 300) }; $('popT').value = ''; $('pop').classList.add('on');
+}
 function sendReport() { var t = String($('popT').value || '').trim(); if (!t) { toast('Напишите, что не так.'); return; } $('pop').classList.remove('on'); api(Object.assign({ op: 'report', text: t }, REP), true).then(function(r) { toast(r.ok ? 'Спасибо! Учитель проверит.' : (r.text || 'Не отправилось.')); }).catch(function() { toast('Нет связи — попробуйте позже.'); }); }
 window.addEventListener('online', flushQueue);
 start();
