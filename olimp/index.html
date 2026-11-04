@@ -152,7 +152,7 @@ body{min-height:100vh;display:flex;flex-direction:column}
 <!-- код -->
 <div class="scr" id="scrCode"><div class="top"><div class="t">ОЦ «Планета» · Олимпиада</div><h1 id="codeName"></h1><div class="sub">Первый вход на этом устройстве</div></div>
  <div class="pad">
-  <div class="card"><h3>Подтвердите, что это ваш телефон</h3><div class="muted" id="codeInfo">Сейчас отправим код в WhatsApp родителя…</div>
+  <div class="card"><h3>Подтвердите, что это ваш телефон</h3><div class="muted" id="codeInfo">Сейчас отправим код в WhatsApp…</div>
    <div class="code"><input id="codeIn" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="····" autocomplete="one-time-code"></div>
    <button class="btn" id="codeBtn" onclick="verify()">Войти</button>
    <div class="muted" style="text-align:center;margin-top:10px"><span id="codeAgain">Код не пришёл? <u style="cursor:pointer" onclick="askCode(true)">Отправить ещё раз</u></span></div>
@@ -240,7 +240,7 @@ function askCode(again) {
   $('codeErr').style.display = 'none'; $('codeInfo').textContent = 'Отправляем код…';
   api({ op: 'code' }).then(function(r) {
     if (r.ok && r.bound) { start(); return; }
-    if (r.ok) { codeWait = Date.now() + 45000; $('codeInfo').innerHTML = 'Код отправлен в WhatsApp родителя<br><b style="color:#0f2a4f">' + esc(r.phone) + '</b> · действует 10 минут' + (r.wait ? '<br><span style="color:#92400e">Код уже отправляли меньше минуты назад — посмотрите WhatsApp</span>' : ''); setTimeout(function() { try { $('codeIn').focus(); } catch (e) {} }, 300); return; }
+    if (r.ok) { codeWait = Date.now() + 45000; $('codeInfo').innerHTML = 'Код отправлен в WhatsApp<br><b style="color:#0f2a4f">' + esc(r.phone) + '</b> · действует 10 минут' + (r.wait ? '<br><span style="color:#92400e">Код уже отправляли меньше минуты назад — посмотрите WhatsApp</span>' : ''); setTimeout(function() { try { $('codeIn').focus(); } catch (e) {} }, 300); return; }
     if (r.code === 'device' || r.code === 'closed' || r.code === 'nophone' || r.code === 'limit') { fail('Вход невозможен', r.text); return; }
     $('codeErr').textContent = r.text || 'Не удалось отправить код.'; $('codeErr').style.display = 'block'; $('codeInfo').textContent = 'Код не отправлен.';
   }).catch(function() { $('codeErr').textContent = 'Нет связи. Попробуйте ещё раз.'; $('codeErr').style.display = 'block'; });
