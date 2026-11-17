@@ -16,8 +16,15 @@
   /* ЖУРНАЛ ЗАНИМАЕТ ВЕСЬ ЭКРАН. Здесь оформлен только экран запуска. */
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:#0f2a4f;overflow:hidden}
+  /* 17.11.2026 · iPhone, приложение с экрана «Домой»: телефон рисовал журнал ПОД строкой часов, а нажатия
+     в этой строке забирает себе — поэтому ☰, месяц ‹ ›, ↻ и полоса «Обновить» вверху не нажимались.
+     Теперь журнал начинается ниже строки часов (--top). Высоту строки обычно сообщает сам телефон
+     (safe-area-inset-top); если он отвечает «0», её считает скрипт внизу (--top-fb).
+     На Android, компьютере, в обычном браузере и когда телефон повёрнут боком отступ 0 — всё как раньше. */
+  :root{--top:max(env(safe-area-inset-top,0px),var(--top-fb,0px))}
+  body.on{background:#f4f7fb}   /* полоса под часами — в цвет верха страницы */
   body{font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;color:#dbe7f7}
-  #frame{position:fixed;inset:0;width:100%;height:100%;border:0;background:#eef3f9;opacity:0;transition:opacity .35s ease}
+  #frame{position:fixed;left:0;top:var(--top);width:100%;height:calc(100% - var(--top));border:0;background:#eef3f9;opacity:0;transition:opacity .35s ease}
   #frame.ready{opacity:1}
 
   /* экран запуска */
@@ -78,7 +85,7 @@
   let done=false, timer=null;
 
   function show(msg){line.style.display='none';fail.classList.add('on');if(msg)failText.textContent=msg}
-  function ready(){if(done)return;done=true;clearTimeout(timer);frame.classList.add('ready');splash.classList.add('gone');
+  function ready(){if(done)return;done=true;clearTimeout(timer);frame.classList.add('ready');document.body.classList.add('on');splash.classList.add('gone');
     setTimeout(()=>{splash.style.display='none'},400)}
 
   document.getElementById('inBrowser').href=JOURNAL_URL;
@@ -95,6 +102,39 @@
     // журнал грузится дольше обычного сайта; ждём, потом предлагаем открыть в браузере
     timer=setTimeout(()=>{if(!done)show('Страница открывается дольше обычного. Подождите ещё немного или откройте его в браузере.')},22000);
   }
+
+  /* 17.11.2026 · отступ под строкой часов на iPhone (см. --top в стилях).
+     Обычно его сообщает сам телефон (safe-area-inset-top). На iOS 26–27 приложение с экрана «Домой» часто
+     получает «0», хотя часы закрывают верх журнала, — тогда отступ считаем сами:
+       1) журнал короче экрана (внизу пустая полоса) — отступ = на сколько он короче;
+       2) журнал во весь экран — отступ = высота строки часов у этой модели iPhone. */
+  (function(){
+    const probe=document.createElement('div');
+    probe.style.cssText='position:fixed;left:0;top:0;width:1px;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none';
+    document.body.appendChild(probe);
+    const BAR={'375x812':50,'414x896':48,'390x844':47,'428x926':47,'393x852':59,'430x932':59,'402x874':62,'440x956':62,'420x912':68};
+    let keep=0;   // найденный отступ; пока открыта клавиатура, его не меняем
+    function portrait(){
+      try{if(screen.orientation&&screen.orientation.type)return screen.orientation.type.indexOf('portrait')===0}catch(e){}
+      if(typeof window.orientation==='number')return Math.abs(window.orientation)!==90;
+      return innerHeight>innerWidth;
+    }
+    function fit(){
+      let fb=0;
+      // navigator.standalone есть только у iPhone/iPad (приложение с экрана «Домой»); на Android и компьютере его нет.
+      // Боком строки часов на iPhone нет — отступ 0.
+      if(navigator.standalone===true&&!probe.getBoundingClientRect().height&&portrait()){
+        const sw=Math.min(screen.width,screen.height),sh=Math.max(screen.width,screen.height),gap=sh-innerHeight;
+        if(gap>=15&&gap<=80)keep=gap;                                   // 1)
+        else if(gap<15)keep=BAR[sw+'x'+sh]||(sh/sw>2?59:20);            // 2)
+        /* gap>80 — открыта клавиатура: отступ прежний */
+        fb=keep;
+      }
+      document.documentElement.style.setProperty('--top-fb',fb+'px');
+    }
+    fit();setTimeout(fit,400);
+    addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,350));
+  })();
 
   if('serviceWorker' in navigator)
     window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
